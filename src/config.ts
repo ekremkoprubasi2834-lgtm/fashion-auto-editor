@@ -1,11 +1,61 @@
+import fs from "node:fs";
 import path from "node:path";
 
 export interface AppConfig {
   inputTranscriptPath: string;
+  inputVoiceoverPath: string;
   outputDir: string;
+  openaiApiKey?: string;
+  transcriptionProvider: "openai" | "dev";
+  transcriptionModel: string;
 }
+
+loadDotEnvIfPresent();
 
 export const config: AppConfig = {
   inputTranscriptPath: process.env.INPUT_TRANSCRIPT_PATH ?? path.join("input", "transcript.txt"),
-  outputDir: process.env.OUTPUT_DIR ?? "output"
+  inputVoiceoverPath: process.env.INPUT_VOICEOVER_PATH ?? path.join("input", "voiceover.mp3"),
+  outputDir: process.env.OUTPUT_DIR ?? "output",
+  openaiApiKey: process.env.OPENAI_API_KEY,
+  transcriptionProvider: process.env.TRANSCRIPTION_PROVIDER === "dev" ? "dev" : "openai",
+  transcriptionModel: process.env.TRANSCRIPTION_MODEL ?? "gpt-4o-mini-transcribe"
 };
+
+function loadDotEnvIfPresent(envPath = ".env"): void {
+  if (!fs.existsSync(envPath)) {
+    return;
+  }
+
+  const lines = fs.readFileSync(envPath, "utf8").split(/\r?\n/);
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    if (!trimmed || trimmed.startsWith("#")) {
+      continue;
+    }
+
+    const separatorIndex = trimmed.indexOf("=");
+
+    if (separatorIndex === -1) {
+      continue;
+    }
+
+    const key = trimmed.slice(0, separatorIndex).trim();
+    const rawValue = trimmed.slice(separatorIndex + 1).trim();
+
+    if (!key || process.env[key] !== undefined) {
+      continue;
+    }
+
+    process.env[key] = stripOptionalQuotes(rawValue);
+  }
+}
+
+function stripOptionalQuotes(value: string): string {
+  if ((value.startsWith("\"") && value.endsWith("\"")) || (value.startsWith("'") && value.endsWith("'"))) {
+    return value.slice(1, -1);
+  }
+
+  return value;
+}

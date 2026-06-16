@@ -6,23 +6,57 @@ import { exportSrt } from "./export/srt-exporter.js";
 import { segmentTranscript } from "./segmentation/segmenter.js";
 import { buildVisualTimeline } from "./timeline/timeline-builder.js";
 import { DevTranscriptTranscriber } from "./transcription/dev-transcript-transcriber.js";
-import { ensureDir, writeTextFile } from "./utils/fs.js";
+import { OpenAITranscriber } from "./transcription/openai-transcriber.js";
+import type { TranscriptResult, Transcriber } from "./transcription/transcriber.js";
+import { ensureDir, fileExists, writeTextFile } from "./utils/fs.js";
 
 async function main(): Promise<void> {
-  const transcriber = new DevTranscriptTranscriber(config.inputTranscriptPath);
+  const transcriber = await createTranscriber();
   const transcript = await transcriber.transcribe();
   const segments = segmentTranscript(transcript.text);
   const timeline = buildVisualTimeline(segments);
 
   await ensureDir(config.outputDir);
   await writeTextFile(path.join(config.outputDir, "transcript.txt"), transcript.text + "\n");
+  await writeTextFile(path.join(config.outputDir, "speech_segments.json"), JSON.stringify(transcript.speechSegments, null, 2) + "\n");
   await writeTextFile(path.join(config.outputDir, "scene_segments.json"), JSON.stringify(segments, null, 2) + "\n");
   await writeTextFile(path.join(config.outputDir, "visual_timeline.csv"), exportVisualTimelineCsv(timeline));
   await writeTextFile(path.join(config.outputDir, "editing_guide.md"), exportEditingGuide(segments, timeline));
   await writeTextFile(path.join(config.outputDir, "subtitles.srt"), exportSrt(segments));
 
-  console.log(`Generated ${segments.length} scene segments from ${transcript.source}.`);
+  console.log(`Generated ${segments.length} scene segments from ${transcript.source} via ${transcript.provider}.`);
   console.log(`Output written to ${config.outputDir}.`);
+}
+
+async function createTranscriber(): Promise<Transcriber> {
+  const hasVoiceover = await fileExists(config.inputVoiceoverPath);
+
+  if (hasVoiceover && config.openaiApiKey && config.transcriptionProvider === "openai") {
+    return new FallbackTranscriber(
+      new OpenAITranscriber(config.inputVoiceoverPath, config.openaiApiKey, config.transcriptionModel),
+      new DevTranscriptTranscriber(config.inputTranscriptPath)
+    );
+  }
+
+  return new DevTranscriptTranscriber(config.inputTranscriptPath);
+}
+
+class FallbackTranscriber implements Transcriber {
+  constructor(
+    private readonly primary: Transcriber,
+    private readonly fallback: Transcriber
+  ) {}
+
+  async transcribe(): Promise<TranscriptResult> {
+    try {
+      return await this.primary.transcribe();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(`Warning: ${message}`);
+      console.warn("Falling back to input/transcript.txt.");
+      return this.fallback.transcribe();
+    }
+  }
 }
 
 main().catch((error: unknown) => {

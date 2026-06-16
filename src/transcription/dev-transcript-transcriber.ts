@@ -13,7 +13,9 @@ export class DevTranscriptTranscriber implements Transcriber {
 
     return {
       text,
-      source: this.transcriptPath
+      source: this.transcriptPath,
+      provider: "dev",
+      speechSegments: []
     };
   }
 }
