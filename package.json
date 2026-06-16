@@ -1,0 +1,17 @@
+{
+  "name": "fashion-auto-editor",
+  "version": "0.1.0",
+  "description": "Local TypeScript CLI for generating fashion video editing assets from a transcript.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/cli.ts",
+    "build": "tsc",
+    "start": "node dist/cli.js"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.10",
+    "tsx": "^4.16.2",
+    "typescript": "^5.5.3"
+  }
+}
