@@ -9,6 +9,7 @@ export interface AppConfig {
   openaiApiKey?: string;
   transcriptionProvider: "openai" | "dev";
   transcriptionModel: string;
+  transcriptCachePath: string;
   enableSubtitleBurn: boolean;
 }
 
@@ -22,6 +23,7 @@ export const config: AppConfig = {
   openaiApiKey: process.env.OPENAI_API_KEY,
   transcriptionProvider: process.env.TRANSCRIPTION_PROVIDER === "dev" ? "dev" : "openai",
   transcriptionModel: process.env.TRANSCRIPTION_MODEL ?? "gpt-4o-mini-transcribe",
+  transcriptCachePath: process.env.TRANSCRIPT_CACHE_PATH ?? path.join(".cache", "transcript.json"),
   enableSubtitleBurn: process.env.ENABLE_SUBTITLE_BURN === "true"
 };
 

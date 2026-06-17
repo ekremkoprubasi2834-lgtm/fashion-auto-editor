@@ -1,6 +1,7 @@
 node_modules/
 dist/
 output/
+.cache/
 input/*.mp3
 input/*.wav
 input/*.m4a

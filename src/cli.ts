@@ -28,6 +28,7 @@ import { burnSubtitlesIntoPreview, type SubtitleBurnResult } from "./render/subt
 import { resolveFinalPreview, type FinalPreviewResult } from "./render/final-preview-resolver.js";
 import { segmentTranscript } from "./segmentation/segmenter.js";
 import { buildVisualTimeline } from "./timeline/timeline-builder.js";
+import { CachingTranscriber } from "./transcription/caching-transcriber.js";
 import { DevTranscriptTranscriber } from "./transcription/dev-transcript-transcriber.js";
 import { OpenAITranscriber } from "./transcription/openai-transcriber.js";
 import type { TranscriptResult, Transcriber } from "./transcription/transcriber.js";
@@ -228,9 +229,14 @@ async function createTranscriber(): Promise<Transcriber> {
   const hasVoiceover = await fileExists(config.inputVoiceoverPath);
 
   if (hasVoiceover && config.openaiApiKey && config.transcriptionProvider === "openai") {
-    return new FallbackTranscriber(
-      new OpenAITranscriber(config.inputVoiceoverPath, config.openaiApiKey, config.transcriptionModel),
-      new DevTranscriptTranscriber(config.inputTranscriptPath)
+    return new CachingTranscriber(
+      new FallbackTranscriber(
+        new OpenAITranscriber(config.inputVoiceoverPath, config.openaiApiKey, config.transcriptionModel),
+        new DevTranscriptTranscriber(config.inputTranscriptPath)
+      ),
+      config.inputVoiceoverPath,
+      config.transcriptionModel,
+      config.transcriptCachePath
     );
   }
 
