@@ -17,6 +17,7 @@ import { exportSrt } from "./export/srt-exporter.js";
 import { exportVoiceoverMixStatus } from "./export/voiceover-mix-status-exporter.js";
 import { exportMusicMixStatus } from "./export/music-mix-status-exporter.js";
 import { exportSubtitleBurnStatus } from "./export/subtitle-burn-status-exporter.js";
+import { exportFinalPreviewStatus } from "./export/final-preview-status-exporter.js";
 import { runFfmpegPreflight } from "./render/ffmpeg-preflight.js";
 import { buildRenderPlan } from "./render/render-plan-builder.js";
 import { renderRoughCutPreview, type RoughCutRenderResult } from "./render/rough-cut-renderer.js";
@@ -24,6 +25,7 @@ import { renderFirstReadyScenePreview, type ScenePreviewRenderResult } from "./r
 import { mixVoiceoverIntoRoughCut, type VoiceoverMixResult } from "./render/voiceover-mixer.js";
 import { mixMusicIntoVoiceoverCut, type MusicMixResult } from "./render/music-mixer.js";
 import { burnSubtitlesIntoPreview, type SubtitleBurnResult } from "./render/subtitle-burner.js";
+import { resolveFinalPreview, type FinalPreviewResult } from "./render/final-preview-resolver.js";
 import { segmentTranscript } from "./segmentation/segmenter.js";
 import { buildVisualTimeline } from "./timeline/timeline-builder.js";
 import { DevTranscriptTranscriber } from "./transcription/dev-transcript-transcriber.js";
@@ -57,6 +59,16 @@ async function main(): Promise<void> {
   await writeTextFile(subtitlePath, exportSrt(segmentation.scenes));
   const subtitleBurn = await resolveSubtitleBurn(roughCutPreview, voiceoverMix, musicMix, subtitlePath);
 
+  const finalPreview = await resolveFinalPreview({
+    candidates: [
+      path.join(config.outputDir, "final_preview_with_subtitles.mp4"),
+      path.join(config.outputDir, "rough_cut_with_voiceover_and_music.mp4"),
+      path.join(config.outputDir, "rough_cut_with_voiceover.mp4"),
+      path.join(config.outputDir, "rough_cut_preview.mp4")
+    ],
+    outputPath: path.join(config.outputDir, "final_preview.mp4")
+  });
+
   await writeTextFile(path.join(config.outputDir, "transcript.txt"), transcript.text + "\n");
   await writeTextFile(path.join(config.outputDir, "speech_segments.json"), JSON.stringify(transcript.speechSegments, null, 2) + "\n");
   await writeTextFile(path.join(config.outputDir, "scene_segments.json"), JSON.stringify(exportSceneSegments(segmentation, timeline), null, 2) + "\n");
@@ -69,9 +81,10 @@ async function main(): Promise<void> {
   await writeTextFile(path.join(config.outputDir, "voiceover_mix_status.md"), exportVoiceoverMixStatus(voiceoverMix));
   await writeTextFile(path.join(config.outputDir, "music_mix_status.md"), exportMusicMixStatus(musicMix));
   await writeTextFile(path.join(config.outputDir, "subtitle_burn_status.md"), exportSubtitleBurnStatus(subtitleBurn));
+  await writeTextFile(path.join(config.outputDir, "final_preview_status.md"), exportFinalPreviewStatus(finalPreview));
   await writeTextFile(path.join(config.outputDir, "visual_timeline.csv"), exportVisualTimelineCsv(timeline));
   await writeTextFile(path.join(config.outputDir, "editing_guide.md"), exportEditingGuide(segmentation.scenes, timeline, assetRequirements, assetManifest, renderPlan, renderPreflight, roughCutPreview, segmentation.qualityWarnings));
-  await writeTextFile(path.join(config.outputDir, "quality_report.md"), exportQualityReport(transcript, segmentation, timeline, assetRequirements, assetManifest, renderPlan, renderPreflight, scenePreview, roughCutPreview, voiceoverMix, musicMix, subtitleBurn));
+  await writeTextFile(path.join(config.outputDir, "quality_report.md"), exportQualityReport(transcript, segmentation, timeline, assetRequirements, assetManifest, renderPlan, renderPreflight, scenePreview, roughCutPreview, voiceoverMix, musicMix, subtitleBurn, finalPreview));
 
   console.log(`Generated ${segmentation.scenes.length} scene segments from ${transcript.source} via ${transcript.provider}.`);
   if (segmentation.qualityWarnings.length > 0) {

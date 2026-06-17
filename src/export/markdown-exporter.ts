@@ -37,6 +37,8 @@ export function exportEditingGuide(
     "- Music mix status: output/music_mix_status.md",
     "- Final preview with subtitles: output/final_preview_with_subtitles.mp4",
     "- Subtitle burn status: output/subtitle_burn_status.md",
+    "- Final preview: output/final_preview.mp4",
+    "- Final preview status: output/final_preview_status.md",
     `- Ready to render: ${renderPlan.summary.readyToRender ? "Yes" : "No"}`,
     `- FFmpeg installed: ${renderPreflight.ffmpegInstalled ? "Yes" : "No"}`,
     `- Rough cut rendered: ${roughCutPreview.rendered ? "Yes" : "No"}`,

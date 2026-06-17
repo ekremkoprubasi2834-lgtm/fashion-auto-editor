@@ -9,6 +9,7 @@ import type { ScenePreviewRenderResult } from "../render/scene-preview-renderer.
 import type { VoiceoverMixResult } from "../render/voiceover-mixer.js";
 import type { MusicMixResult } from "../render/music-mixer.js";
 import type { SubtitleBurnResult } from "../render/subtitle-burner.js";
+import type { FinalPreviewResult } from "../render/final-preview-resolver.js";
 import type { SegmentationResult } from "../segmentation/segmenter.js";
 import type { VisualTimelineItem } from "../timeline/timeline-builder.js";
 import type { TranscriptResult } from "../transcription/transcriber.js";
@@ -25,7 +26,8 @@ export function exportQualityReport(
   roughCutPreview: RoughCutRenderResult,
   voiceoverMix: VoiceoverMixResult,
   musicMix: MusicMixResult,
-  subtitleBurn: SubtitleBurnResult
+  subtitleBurn: SubtitleBurnResult,
+  finalPreview: FinalPreviewResult
 ): string {
   const chapterCount = segmentation.chapters.length;
   const itemCount = countItems(segmentation);
@@ -168,6 +170,16 @@ export function exportQualityReport(
     `- Input video: ${subtitleBurn.inputVideoPath ?? "None"}`,
     `- Output: ${subtitleBurn.outputPath ?? "None"}`,
     `- Reason: ${subtitleBurn.reason ?? "None"}`
+  );
+
+  lines.push(
+    "",
+    "## Final Preview Summary",
+    "",
+    `- Resolved: ${finalPreview.resolved ? "Yes" : "No"}`,
+    `- Source: ${finalPreview.sourcePath ?? "None"}`,
+    `- Output: ${finalPreview.outputPath ?? "None"}`,
+    `- Reason: ${finalPreview.reason ?? "None"}`
   );
 
   lines.push(
