@@ -2,6 +2,7 @@ import path from "node:path";
 import { config } from "./config.js";
 import { exportVisualTimelineCsv } from "./export/csv-exporter.js";
 import { exportEditingGuide } from "./export/markdown-exporter.js";
+import { exportQualityReport } from "./export/quality-report-exporter.js";
 import { exportSceneSegments } from "./export/scene-segments-exporter.js";
 import { exportSrt } from "./export/srt-exporter.js";
 import { segmentTranscript } from "./segmentation/segmenter.js";
@@ -24,6 +25,7 @@ async function main(): Promise<void> {
   await writeTextFile(path.join(config.outputDir, "visual_timeline.csv"), exportVisualTimelineCsv(timeline));
   await writeTextFile(path.join(config.outputDir, "editing_guide.md"), exportEditingGuide(segmentation.scenes, timeline, segmentation.qualityWarnings));
   await writeTextFile(path.join(config.outputDir, "subtitles.srt"), exportSrt(segmentation.scenes));
+  await writeTextFile(path.join(config.outputDir, "quality_report.md"), exportQualityReport(transcript, segmentation));
 
   console.log(`Generated ${segmentation.scenes.length} scene segments from ${transcript.source} via ${transcript.provider}.`);
   if (segmentation.qualityWarnings.length > 0) {
