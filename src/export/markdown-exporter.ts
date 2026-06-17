@@ -26,6 +26,7 @@ export function exportEditingGuide(
     "- Asset slots are tracked in output/asset_manifest.json",
     "- Render plan: output/render_plan.json",
     "- Render preflight: output/render_preflight.md",
+    "- Scene preview status: output/scene_preview_status.md",
     `- Ready to render: ${renderPlan.summary.readyToRender ? "Yes" : "No"}`,
     `- FFmpeg installed: ${renderPreflight.ffmpegInstalled ? "Yes" : "No"}`,
     "",

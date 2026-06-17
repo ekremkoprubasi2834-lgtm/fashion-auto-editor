@@ -11,9 +11,11 @@ import { exportQualityReport } from "./export/quality-report-exporter.js";
 import { exportRenderPreflight } from "./export/render-preflight-exporter.js";
 import { exportRenderPlan } from "./export/render-plan-exporter.js";
 import { exportSceneSegments } from "./export/scene-segments-exporter.js";
+import { exportScenePreviewStatus } from "./export/scene-preview-status-exporter.js";
 import { exportSrt } from "./export/srt-exporter.js";
 import { runFfmpegPreflight } from "./render/ffmpeg-preflight.js";
 import { buildRenderPlan } from "./render/render-plan-builder.js";
+import { renderFirstReadyScenePreview, type ScenePreviewRenderResult } from "./render/scene-preview-renderer.js";
 import { segmentTranscript } from "./segmentation/segmenter.js";
 import { buildVisualTimeline } from "./timeline/timeline-builder.js";
 import { DevTranscriptTranscriber } from "./transcription/dev-transcript-transcriber.js";
@@ -32,6 +34,11 @@ async function main(): Promise<void> {
   const renderPreflight = await runFfmpegPreflight(renderPlan);
 
   await ensureDir(config.outputDir);
+
+  const scenePreview = renderPreflight.ffmpegInstalled
+    ? await renderFirstReadyScenePreview({ renderPlan, outputDir: config.outputDir })
+    : createSkippedScenePreview("FFmpeg is not installed or not available in PATH.");
+
   await writeTextFile(path.join(config.outputDir, "transcript.txt"), transcript.text + "\n");
   await writeTextFile(path.join(config.outputDir, "speech_segments.json"), JSON.stringify(transcript.speechSegments, null, 2) + "\n");
   await writeTextFile(path.join(config.outputDir, "scene_segments.json"), JSON.stringify(exportSceneSegments(segmentation, timeline), null, 2) + "\n");
@@ -39,16 +46,27 @@ async function main(): Promise<void> {
   await writeTextFile(path.join(config.outputDir, "asset_manifest.json"), exportAssetManifest(assetManifest));
   await writeTextFile(path.join(config.outputDir, "render_plan.json"), exportRenderPlan(renderPlan));
   await writeTextFile(path.join(config.outputDir, "render_preflight.md"), exportRenderPreflight(renderPreflight, renderPlan));
+  await writeTextFile(path.join(config.outputDir, "scene_preview_status.md"), exportScenePreviewStatus(scenePreview));
   await writeTextFile(path.join(config.outputDir, "visual_timeline.csv"), exportVisualTimelineCsv(timeline));
   await writeTextFile(path.join(config.outputDir, "editing_guide.md"), exportEditingGuide(segmentation.scenes, timeline, assetRequirements, assetManifest, renderPlan, renderPreflight, segmentation.qualityWarnings));
   await writeTextFile(path.join(config.outputDir, "subtitles.srt"), exportSrt(segmentation.scenes));
-  await writeTextFile(path.join(config.outputDir, "quality_report.md"), exportQualityReport(transcript, segmentation, timeline, assetRequirements, assetManifest, renderPlan, renderPreflight));
+  await writeTextFile(path.join(config.outputDir, "quality_report.md"), exportQualityReport(transcript, segmentation, timeline, assetRequirements, assetManifest, renderPlan, renderPreflight, scenePreview));
 
   console.log(`Generated ${segmentation.scenes.length} scene segments from ${transcript.source} via ${transcript.provider}.`);
   if (segmentation.qualityWarnings.length > 0) {
     console.warn(`Generated ${segmentation.qualityWarnings.length} quality warning(s).`);
   }
   console.log(`Output written to ${config.outputDir}.`);
+}
+
+function createSkippedScenePreview(reason: string): ScenePreviewRenderResult {
+  return {
+    attempted: false,
+    rendered: false,
+    sceneIndex: null,
+    outputPath: null,
+    reason
+  };
 }
 
 async function createTranscriber(): Promise<Transcriber> {

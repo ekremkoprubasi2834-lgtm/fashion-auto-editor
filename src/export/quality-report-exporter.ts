@@ -4,6 +4,7 @@ import { runGermanFashionQa, type QualityWarning } from "../quality/german-fashi
 import { runSubscriberConversionQa, type SubscriberQaWarning } from "../quality/subscriber-conversion-qa.js";
 import type { FfmpegPreflightResult } from "../render/ffmpeg-preflight.js";
 import type { VideoRenderPlan } from "../render/render-plan-builder.js";
+import type { ScenePreviewRenderResult } from "../render/scene-preview-renderer.js";
 import type { SegmentationResult } from "../segmentation/segmenter.js";
 import type { VisualTimelineItem } from "../timeline/timeline-builder.js";
 import type { TranscriptResult } from "../transcription/transcriber.js";
@@ -15,7 +16,8 @@ export function exportQualityReport(
   assetRequirements: SceneAssetRequirement[],
   assetManifest: AssetManifestEntry[],
   renderPlan: VideoRenderPlan,
-  renderPreflight: FfmpegPreflightResult
+  renderPreflight: FfmpegPreflightResult,
+  scenePreview: ScenePreviewRenderResult
 ): string {
   const chapterCount = segmentation.chapters.length;
   const itemCount = countItems(segmentation);
@@ -103,6 +105,17 @@ export function exportQualityReport(
     `- FFmpeg installed: ${renderPreflight.ffmpegInstalled ? "Yes" : "No"}`,
     `- Ready to render: ${renderPreflight.readyToRender ? "Yes" : "No"}`,
     `- Blocking reasons: ${renderPreflight.blockingReasons.length}`
+  );
+
+  lines.push(
+    "",
+    "## Scene Preview Render Summary",
+    "",
+    `- Attempted: ${scenePreview.attempted ? "Yes" : "No"}`,
+    `- Rendered: ${scenePreview.rendered ? "Yes" : "No"}`,
+    `- Scene index: ${scenePreview.sceneIndex ?? "None"}`,
+    `- Output path: ${scenePreview.outputPath ?? "None"}`,
+    `- Reason: ${scenePreview.reason ?? "None"}`
   );
 
   lines.push(
