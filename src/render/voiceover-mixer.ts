@@ -76,16 +76,21 @@ function buildArgs(
   input: { roughCutPath: string; voiceoverPath: string; outputPath: string },
   videoCodec: "copy" | "libx264"
 ): string[] {
+  // Pad the voiceover with trailing silence so it is never shorter than the
+  // video. Without this, -shortest trims the output to the voiceover length,
+  // dropping the final scenes when the voiceover is shorter than the rough cut.
   const args = [
     "-y",
     "-i",
     input.roughCutPath,
     "-i",
     input.voiceoverPath,
+    "-filter_complex",
+    "[1:a]apad[aout]",
     "-map",
     "0:v:0",
     "-map",
-    "1:a:0",
+    "[aout]",
     "-c:v",
     videoCodec
   ];
