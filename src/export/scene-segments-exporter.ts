@@ -10,6 +10,7 @@ interface ExportedScene {
   startTime: string;
   endTime: string;
   spokenText: string;
+  layoutType: VisualTimelineItem["layoutType"];
   visualIntent: string;
   suggestedAssetFolder: string;
   searchKeywords: string[];
@@ -71,6 +72,7 @@ function enrichScene(scene: SceneSegment, timeline: VisualTimelineItem[]): Expor
     startTime: timelineItem.startTime,
     endTime: timelineItem.endTime,
     spokenText: scene.spokenText,
+    layoutType: timelineItem.layoutType,
     visualIntent: timelineItem.visualIntent,
     suggestedAssetFolder: timelineItem.suggestedAssetFolder,
     searchKeywords: timelineItem.searchKeywords

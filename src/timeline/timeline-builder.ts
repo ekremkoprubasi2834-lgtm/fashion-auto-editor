@@ -1,3 +1,4 @@
+import { chooseVisualLayout, type VisualLayoutType } from "../layout/visual-layout-engine.js";
 import type { SceneSegment } from "../segmentation/segmenter.js";
 
 export interface VisualTimelineItem {
@@ -9,6 +10,7 @@ export interface VisualTimelineItem {
   sceneIndex: number;
   section: string;
   spokenText: string;
+  layoutType: VisualLayoutType;
   visualIntent: string;
   suggestedAssetFolder: string;
   searchKeywords: string[];
@@ -20,6 +22,13 @@ export function buildVisualTimeline(segments: SceneSegment[]): VisualTimelineIte
   return segments.map((segment) => {
     const visual = createFashionVisualIntent(segment.spokenText, segment.section, segment.id, previousEntry);
     previousEntry = visual.entry ?? previousEntry;
+    const layoutType = chooseVisualLayout({
+      chapter: segment.chapter,
+      itemTitle: segment.itemTitle,
+      spokenText: segment.spokenText,
+      visualIntent: visual.intent,
+      searchKeywords: visual.keywords
+    });
 
     return {
       startTime: secondsToClock(segment.startSeconds),
@@ -30,6 +39,7 @@ export function buildVisualTimeline(segments: SceneSegment[]): VisualTimelineIte
       sceneIndex: segment.sceneIndex,
       section: segment.section,
       spokenText: segment.spokenText,
+      layoutType,
       visualIntent: visual.intent,
       suggestedAssetFolder: visual.folder,
       searchKeywords: visual.keywords

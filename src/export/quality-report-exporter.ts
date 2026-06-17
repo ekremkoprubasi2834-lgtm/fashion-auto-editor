@@ -1,9 +1,14 @@
 import { runGermanFashionQa, type QualityWarning } from "../quality/german-fashion-qa.js";
 import { runSubscriberConversionQa, type SubscriberQaWarning } from "../quality/subscriber-conversion-qa.js";
 import type { SegmentationResult } from "../segmentation/segmenter.js";
+import type { VisualTimelineItem } from "../timeline/timeline-builder.js";
 import type { TranscriptResult } from "../transcription/transcriber.js";
 
-export function exportQualityReport(transcript: TranscriptResult, segmentation: SegmentationResult): string {
+export function exportQualityReport(
+  transcript: TranscriptResult,
+  segmentation: SegmentationResult,
+  timeline: VisualTimelineItem[]
+): string {
   const chapterCount = segmentation.chapters.length;
   const itemCount = countItems(segmentation);
   const sceneCount = segmentation.scenes.length;
@@ -38,6 +43,16 @@ export function exportQualityReport(transcript: TranscriptResult, segmentation: 
       }
     }
   }
+
+  lines.push(
+    "",
+    "## Layout Summary",
+    "",
+    `- single_blur: ${countLayout(timeline, "single_blur")} scenes`,
+    `- moodboard_3: ${countLayout(timeline, "moodboard_3")} scenes`,
+    `- comparison_2: ${countLayout(timeline, "comparison_2")} scenes`,
+    `- recap_grid: ${countLayout(timeline, "recap_grid")} scenes`
+  );
 
   lines.push(
     "",
@@ -90,6 +105,10 @@ export function exportQualityReport(transcript: TranscriptResult, segmentation: 
 
 function countItems(segmentation: SegmentationResult): number {
   return segmentation.chapters.reduce((total, chapter) => total + (chapter.items?.length ?? 0), 0);
+}
+
+function countLayout(timeline: VisualTimelineItem[], layoutType: VisualTimelineItem["layoutType"]): number {
+  return timeline.filter((item) => item.layoutType === layoutType).length;
 }
 
 function formatGermanFashionWarning(warning: QualityWarning): string {

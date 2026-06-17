@@ -95,6 +95,7 @@ function appendScene(lines: string[], segment: SceneSegment, item: VisualTimelin
     "",
     `- Time: ${formatDurationRange(segment.startSeconds, segment.endSeconds)}`,
     `- Spoken text: ${segment.spokenText}`,
+    `- Layout: ${item.layoutType}`,
     `- Visual intent: ${item.visualIntent}`,
     `- Suggested asset folder: ${item.suggestedAssetFolder}`,
     `- Search keywords: ${item.searchKeywords.join(", ")}`,
