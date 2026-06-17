@@ -7,6 +7,7 @@ import type { VideoRenderPlan } from "../render/render-plan-builder.js";
 import type { RoughCutRenderResult } from "../render/rough-cut-renderer.js";
 import type { ScenePreviewRenderResult } from "../render/scene-preview-renderer.js";
 import type { VoiceoverMixResult } from "../render/voiceover-mixer.js";
+import type { MusicMixResult } from "../render/music-mixer.js";
 import type { SegmentationResult } from "../segmentation/segmenter.js";
 import type { VisualTimelineItem } from "../timeline/timeline-builder.js";
 import type { TranscriptResult } from "../transcription/transcriber.js";
@@ -21,7 +22,8 @@ export function exportQualityReport(
   renderPreflight: FfmpegPreflightResult,
   scenePreview: ScenePreviewRenderResult,
   roughCutPreview: RoughCutRenderResult,
-  voiceoverMix: VoiceoverMixResult
+  voiceoverMix: VoiceoverMixResult,
+  musicMix: MusicMixResult
 ): string {
   const chapterCount = segmentation.chapters.length;
   const itemCount = countItems(segmentation);
@@ -142,6 +144,17 @@ export function exportQualityReport(
     `- Rendered: ${voiceoverMix.rendered ? "Yes" : "No"}`,
     `- Output: ${voiceoverMix.outputPath ?? "None"}`,
     `- Reason: ${voiceoverMix.reason ?? "None"}`
+  );
+
+  lines.push(
+    "",
+    "## Music Mix Summary",
+    "",
+    `- Attempted: ${musicMix.attempted ? "Yes" : "No"}`,
+    `- Rendered: ${musicMix.rendered ? "Yes" : "No"}`,
+    `- Output: ${musicMix.outputPath ?? "None"}`,
+    `- Music volume: ${musicMix.musicVolume ?? "None"}`,
+    `- Reason: ${musicMix.reason ?? "None"}`
   );
 
   lines.push(

@@ -15,11 +15,13 @@ import { exportSceneSegments } from "./export/scene-segments-exporter.js";
 import { exportScenePreviewStatus } from "./export/scene-preview-status-exporter.js";
 import { exportSrt } from "./export/srt-exporter.js";
 import { exportVoiceoverMixStatus } from "./export/voiceover-mix-status-exporter.js";
+import { exportMusicMixStatus } from "./export/music-mix-status-exporter.js";
 import { runFfmpegPreflight } from "./render/ffmpeg-preflight.js";
 import { buildRenderPlan } from "./render/render-plan-builder.js";
 import { renderRoughCutPreview, type RoughCutRenderResult } from "./render/rough-cut-renderer.js";
 import { renderFirstReadyScenePreview, type ScenePreviewRenderResult } from "./render/scene-preview-renderer.js";
 import { mixVoiceoverIntoRoughCut, type VoiceoverMixResult } from "./render/voiceover-mixer.js";
+import { mixMusicIntoVoiceoverCut, type MusicMixResult } from "./render/music-mixer.js";
 import { segmentTranscript } from "./segmentation/segmenter.js";
 import { buildVisualTimeline } from "./timeline/timeline-builder.js";
 import { DevTranscriptTranscriber } from "./transcription/dev-transcript-transcriber.js";
@@ -47,6 +49,7 @@ async function main(): Promise<void> {
     : createSkippedRoughCutPreview(renderPlan.summary.totalScenes, "FFmpeg is not installed or not available in PATH.");
 
   const voiceoverMix = await resolveVoiceoverMix(roughCutPreview);
+  const musicMix = await resolveMusicMix(voiceoverMix);
 
   await writeTextFile(path.join(config.outputDir, "transcript.txt"), transcript.text + "\n");
   await writeTextFile(path.join(config.outputDir, "speech_segments.json"), JSON.stringify(transcript.speechSegments, null, 2) + "\n");
@@ -58,10 +61,11 @@ async function main(): Promise<void> {
   await writeTextFile(path.join(config.outputDir, "scene_preview_status.md"), exportScenePreviewStatus(scenePreview));
   await writeTextFile(path.join(config.outputDir, "rough_cut_status.md"), exportRoughCutStatus(roughCutPreview));
   await writeTextFile(path.join(config.outputDir, "voiceover_mix_status.md"), exportVoiceoverMixStatus(voiceoverMix));
+  await writeTextFile(path.join(config.outputDir, "music_mix_status.md"), exportMusicMixStatus(musicMix));
   await writeTextFile(path.join(config.outputDir, "visual_timeline.csv"), exportVisualTimelineCsv(timeline));
   await writeTextFile(path.join(config.outputDir, "editing_guide.md"), exportEditingGuide(segmentation.scenes, timeline, assetRequirements, assetManifest, renderPlan, renderPreflight, roughCutPreview, segmentation.qualityWarnings));
   await writeTextFile(path.join(config.outputDir, "subtitles.srt"), exportSrt(segmentation.scenes));
-  await writeTextFile(path.join(config.outputDir, "quality_report.md"), exportQualityReport(transcript, segmentation, timeline, assetRequirements, assetManifest, renderPlan, renderPreflight, scenePreview, roughCutPreview, voiceoverMix));
+  await writeTextFile(path.join(config.outputDir, "quality_report.md"), exportQualityReport(transcript, segmentation, timeline, assetRequirements, assetManifest, renderPlan, renderPreflight, scenePreview, roughCutPreview, voiceoverMix, musicMix));
 
   console.log(`Generated ${segmentation.scenes.length} scene segments from ${transcript.source} via ${transcript.provider}.`);
   if (segmentation.qualityWarnings.length > 0) {
@@ -103,6 +107,32 @@ async function resolveVoiceoverMix(roughCutPreview: RoughCutRenderResult): Promi
     roughCutPath: roughCutPreview.outputPath,
     voiceoverPath: config.inputVoiceoverPath,
     outputPath: path.join(config.outputDir, "rough_cut_with_voiceover.mp4")
+  });
+}
+
+async function resolveMusicMix(voiceoverMix: VoiceoverMixResult): Promise<MusicMixResult> {
+  if (!voiceoverMix.rendered || !voiceoverMix.outputPath) {
+    return {
+      attempted: false,
+      rendered: false,
+      outputPath: null,
+      reason: "Voiceover cut not available."
+    };
+  }
+
+  if (!(await fileExists(config.inputMusicPath))) {
+    return {
+      attempted: false,
+      rendered: false,
+      outputPath: null,
+      reason: "input/music.mp3 not found."
+    };
+  }
+
+  return mixMusicIntoVoiceoverCut({
+    voiceoverCutPath: voiceoverMix.outputPath,
+    musicPath: config.inputMusicPath,
+    outputPath: path.join(config.outputDir, "rough_cut_with_voiceover_and_music.mp4")
   });
 }
 

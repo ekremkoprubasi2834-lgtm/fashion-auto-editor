@@ -4,6 +4,7 @@ import path from "node:path";
 export interface AppConfig {
   inputTranscriptPath: string;
   inputVoiceoverPath: string;
+  inputMusicPath: string;
   outputDir: string;
   openaiApiKey?: string;
   transcriptionProvider: "openai" | "dev";
@@ -15,6 +16,7 @@ loadDotEnvIfPresent();
 export const config: AppConfig = {
   inputTranscriptPath: process.env.INPUT_TRANSCRIPT_PATH ?? path.join("input", "transcript.txt"),
   inputVoiceoverPath: process.env.INPUT_VOICEOVER_PATH ?? path.join("input", "voiceover.mp3"),
+  inputMusicPath: process.env.INPUT_MUSIC_PATH ?? path.join("input", "music.mp3"),
   outputDir: process.env.OUTPUT_DIR ?? "output",
   openaiApiKey: process.env.OPENAI_API_KEY,
   transcriptionProvider: process.env.TRANSCRIPTION_PROVIDER === "dev" ? "dev" : "openai",
