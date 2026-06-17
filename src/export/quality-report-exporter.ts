@@ -1,3 +1,4 @@
+import type { AssetManifestEntry } from "../assets/asset-manifest-builder.js";
 import type { SceneAssetRequirement } from "../assets/asset-requirements-builder.js";
 import { runGermanFashionQa, type QualityWarning } from "../quality/german-fashion-qa.js";
 import { runSubscriberConversionQa, type SubscriberQaWarning } from "../quality/subscriber-conversion-qa.js";
@@ -9,7 +10,8 @@ export function exportQualityReport(
   transcript: TranscriptResult,
   segmentation: SegmentationResult,
   timeline: VisualTimelineItem[],
-  assetRequirements: SceneAssetRequirement[]
+  assetRequirements: SceneAssetRequirement[],
+  assetManifest: AssetManifestEntry[]
 ): string {
   const chapterCount = segmentation.chapters.length;
   const itemCount = countItems(segmentation);
@@ -65,6 +67,16 @@ export function exportQualityReport(
     `- moodboard_3 assets: ${countRequiredAssetsByLayout(assetRequirements, "moodboard_3")}`,
     `- comparison_2 assets: ${countRequiredAssetsByLayout(assetRequirements, "comparison_2")}`,
     `- recap_grid assets: ${countRequiredAssetsByLayout(assetRequirements, "recap_grid")}`
+  );
+
+  lines.push(
+    "",
+    "## Asset Manifest Summary",
+    "",
+    `- Total manifest slots: ${assetManifest.length}`,
+    `- Missing slots: ${countManifestStatus(assetManifest, "missing")}`,
+    `- Selected slots: ${countManifestStatus(assetManifest, "selected")}`,
+    `- Rejected slots: ${countManifestStatus(assetManifest, "rejected")}`
   );
 
   lines.push(
@@ -135,6 +147,13 @@ function countRequiredAssetsByLayout(
   return requirements
     .filter((requirement) => requirement.layoutType === layoutType)
     .reduce((total, requirement) => total + requirement.requiredAssetCount, 0);
+}
+
+function countManifestStatus(
+  manifest: AssetManifestEntry[],
+  status: AssetManifestEntry["status"]
+): number {
+  return manifest.filter((entry) => entry.status === status).length;
 }
 
 function formatGermanFashionWarning(warning: QualityWarning): string {

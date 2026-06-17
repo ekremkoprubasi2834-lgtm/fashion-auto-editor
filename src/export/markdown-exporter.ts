@@ -17,6 +17,7 @@ export function exportEditingGuide(
     "- Format: women's fashion YouTube video",
     "- Pace: clean editorial cuts with 5-12 second scenes",
     "- Visual direction: polished capsule wardrobe, styling details, outfit transitions",
+    "- Asset slots are tracked in output/asset_manifest.json",
     "",
     "## Quality Warnings",
     ""
