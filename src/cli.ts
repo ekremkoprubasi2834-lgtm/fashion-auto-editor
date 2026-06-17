@@ -1,6 +1,7 @@
 import path from "node:path";
 import { buildAssetManifest } from "./assets/asset-manifest-builder.js";
 import { buildAssetRequirements } from "./assets/asset-requirements-builder.js";
+import { resolveManualAssets } from "./assets/manual-asset-resolver.js";
 import { config } from "./config.js";
 import { exportAssetManifest } from "./export/asset-manifest-exporter.js";
 import { exportAssetRequirements } from "./export/asset-requirements-exporter.js";
@@ -22,7 +23,7 @@ async function main(): Promise<void> {
   const segmentation = segmentTranscript(transcript.text);
   const timeline = buildVisualTimeline(segmentation.scenes);
   const assetRequirements = buildAssetRequirements(timeline);
-  const assetManifest = buildAssetManifest(assetRequirements);
+  const assetManifest = resolveManualAssets(buildAssetManifest(assetRequirements), "assets");
 
   await ensureDir(config.outputDir);
   await writeTextFile(path.join(config.outputDir, "transcript.txt"), transcript.text + "\n");
@@ -31,7 +32,7 @@ async function main(): Promise<void> {
   await writeTextFile(path.join(config.outputDir, "asset_requirements.json"), exportAssetRequirements(assetRequirements));
   await writeTextFile(path.join(config.outputDir, "asset_manifest.json"), exportAssetManifest(assetManifest));
   await writeTextFile(path.join(config.outputDir, "visual_timeline.csv"), exportVisualTimelineCsv(timeline));
-  await writeTextFile(path.join(config.outputDir, "editing_guide.md"), exportEditingGuide(segmentation.scenes, timeline, assetRequirements, segmentation.qualityWarnings));
+  await writeTextFile(path.join(config.outputDir, "editing_guide.md"), exportEditingGuide(segmentation.scenes, timeline, assetRequirements, assetManifest, segmentation.qualityWarnings));
   await writeTextFile(path.join(config.outputDir, "subtitles.srt"), exportSrt(segmentation.scenes));
   await writeTextFile(path.join(config.outputDir, "quality_report.md"), exportQualityReport(transcript, segmentation, timeline, assetRequirements, assetManifest));
 
