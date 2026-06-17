@@ -16,12 +16,14 @@ import { exportScenePreviewStatus } from "./export/scene-preview-status-exporter
 import { exportSrt } from "./export/srt-exporter.js";
 import { exportVoiceoverMixStatus } from "./export/voiceover-mix-status-exporter.js";
 import { exportMusicMixStatus } from "./export/music-mix-status-exporter.js";
+import { exportSubtitleBurnStatus } from "./export/subtitle-burn-status-exporter.js";
 import { runFfmpegPreflight } from "./render/ffmpeg-preflight.js";
 import { buildRenderPlan } from "./render/render-plan-builder.js";
 import { renderRoughCutPreview, type RoughCutRenderResult } from "./render/rough-cut-renderer.js";
 import { renderFirstReadyScenePreview, type ScenePreviewRenderResult } from "./render/scene-preview-renderer.js";
 import { mixVoiceoverIntoRoughCut, type VoiceoverMixResult } from "./render/voiceover-mixer.js";
 import { mixMusicIntoVoiceoverCut, type MusicMixResult } from "./render/music-mixer.js";
+import { burnSubtitlesIntoPreview, type SubtitleBurnResult } from "./render/subtitle-burner.js";
 import { segmentTranscript } from "./segmentation/segmenter.js";
 import { buildVisualTimeline } from "./timeline/timeline-builder.js";
 import { DevTranscriptTranscriber } from "./transcription/dev-transcript-transcriber.js";
@@ -51,6 +53,10 @@ async function main(): Promise<void> {
   const voiceoverMix = await resolveVoiceoverMix(roughCutPreview);
   const musicMix = await resolveMusicMix(voiceoverMix);
 
+  const subtitlePath = path.join(config.outputDir, "subtitles.srt");
+  await writeTextFile(subtitlePath, exportSrt(segmentation.scenes));
+  const subtitleBurn = await resolveSubtitleBurn(roughCutPreview, voiceoverMix, musicMix, subtitlePath);
+
   await writeTextFile(path.join(config.outputDir, "transcript.txt"), transcript.text + "\n");
   await writeTextFile(path.join(config.outputDir, "speech_segments.json"), JSON.stringify(transcript.speechSegments, null, 2) + "\n");
   await writeTextFile(path.join(config.outputDir, "scene_segments.json"), JSON.stringify(exportSceneSegments(segmentation, timeline), null, 2) + "\n");
@@ -62,10 +68,10 @@ async function main(): Promise<void> {
   await writeTextFile(path.join(config.outputDir, "rough_cut_status.md"), exportRoughCutStatus(roughCutPreview));
   await writeTextFile(path.join(config.outputDir, "voiceover_mix_status.md"), exportVoiceoverMixStatus(voiceoverMix));
   await writeTextFile(path.join(config.outputDir, "music_mix_status.md"), exportMusicMixStatus(musicMix));
+  await writeTextFile(path.join(config.outputDir, "subtitle_burn_status.md"), exportSubtitleBurnStatus(subtitleBurn));
   await writeTextFile(path.join(config.outputDir, "visual_timeline.csv"), exportVisualTimelineCsv(timeline));
   await writeTextFile(path.join(config.outputDir, "editing_guide.md"), exportEditingGuide(segmentation.scenes, timeline, assetRequirements, assetManifest, renderPlan, renderPreflight, roughCutPreview, segmentation.qualityWarnings));
-  await writeTextFile(path.join(config.outputDir, "subtitles.srt"), exportSrt(segmentation.scenes));
-  await writeTextFile(path.join(config.outputDir, "quality_report.md"), exportQualityReport(transcript, segmentation, timeline, assetRequirements, assetManifest, renderPlan, renderPreflight, scenePreview, roughCutPreview, voiceoverMix, musicMix));
+  await writeTextFile(path.join(config.outputDir, "quality_report.md"), exportQualityReport(transcript, segmentation, timeline, assetRequirements, assetManifest, renderPlan, renderPreflight, scenePreview, roughCutPreview, voiceoverMix, musicMix, subtitleBurn));
 
   console.log(`Generated ${segmentation.scenes.length} scene segments from ${transcript.source} via ${transcript.provider}.`);
   if (segmentation.qualityWarnings.length > 0) {
@@ -133,6 +139,52 @@ async function resolveMusicMix(voiceoverMix: VoiceoverMixResult): Promise<MusicM
     voiceoverCutPath: voiceoverMix.outputPath,
     musicPath: config.inputMusicPath,
     outputPath: path.join(config.outputDir, "rough_cut_with_voiceover_and_music.mp4")
+  });
+}
+
+function selectBestVideoSource(
+  roughCutPreview: RoughCutRenderResult,
+  voiceoverMix: VoiceoverMixResult,
+  musicMix: MusicMixResult
+): string | null {
+  if (musicMix.rendered && musicMix.outputPath) {
+    return musicMix.outputPath;
+  }
+
+  if (voiceoverMix.rendered && voiceoverMix.outputPath) {
+    return voiceoverMix.outputPath;
+  }
+
+  if (roughCutPreview.rendered && roughCutPreview.outputPath) {
+    return roughCutPreview.outputPath;
+  }
+
+  return null;
+}
+
+async function resolveSubtitleBurn(
+  roughCutPreview: RoughCutRenderResult,
+  voiceoverMix: VoiceoverMixResult,
+  musicMix: MusicMixResult,
+  subtitlePath: string
+): Promise<SubtitleBurnResult> {
+  const inputVideoPath = selectBestVideoSource(roughCutPreview, voiceoverMix, musicMix);
+
+  if (!inputVideoPath) {
+    return {
+      attempted: false,
+      rendered: false,
+      inputVideoPath: null,
+      subtitlePath: null,
+      outputPath: null,
+      reason: "No source video available."
+    };
+  }
+
+  return burnSubtitlesIntoPreview({
+    inputVideoPath,
+    subtitlePath,
+    outputPath: path.join(config.outputDir, "final_preview_with_subtitles.mp4")
   });
 }
 

@@ -8,6 +8,7 @@ import type { RoughCutRenderResult } from "../render/rough-cut-renderer.js";
 import type { ScenePreviewRenderResult } from "../render/scene-preview-renderer.js";
 import type { VoiceoverMixResult } from "../render/voiceover-mixer.js";
 import type { MusicMixResult } from "../render/music-mixer.js";
+import type { SubtitleBurnResult } from "../render/subtitle-burner.js";
 import type { SegmentationResult } from "../segmentation/segmenter.js";
 import type { VisualTimelineItem } from "../timeline/timeline-builder.js";
 import type { TranscriptResult } from "../transcription/transcriber.js";
@@ -23,7 +24,8 @@ export function exportQualityReport(
   scenePreview: ScenePreviewRenderResult,
   roughCutPreview: RoughCutRenderResult,
   voiceoverMix: VoiceoverMixResult,
-  musicMix: MusicMixResult
+  musicMix: MusicMixResult,
+  subtitleBurn: SubtitleBurnResult
 ): string {
   const chapterCount = segmentation.chapters.length;
   const itemCount = countItems(segmentation);
@@ -155,6 +157,17 @@ export function exportQualityReport(
     `- Output: ${musicMix.outputPath ?? "None"}`,
     `- Music volume: ${musicMix.musicVolume ?? "None"}`,
     `- Reason: ${musicMix.reason ?? "None"}`
+  );
+
+  lines.push(
+    "",
+    "## Subtitle Burn Summary",
+    "",
+    `- Attempted: ${subtitleBurn.attempted ? "Yes" : "No"}`,
+    `- Rendered: ${subtitleBurn.rendered ? "Yes" : "No"}`,
+    `- Input video: ${subtitleBurn.inputVideoPath ?? "None"}`,
+    `- Output: ${subtitleBurn.outputPath ?? "None"}`,
+    `- Reason: ${subtitleBurn.reason ?? "None"}`
   );
 
   lines.push(
