@@ -2,6 +2,7 @@ import type { AssetManifestEntry } from "../assets/asset-manifest-builder.js";
 import type { SceneAssetRequirement } from "../assets/asset-requirements-builder.js";
 import { runGermanFashionQa, type QualityWarning } from "../quality/german-fashion-qa.js";
 import { runSubscriberConversionQa, type SubscriberQaWarning } from "../quality/subscriber-conversion-qa.js";
+import type { VideoRenderPlan } from "../render/render-plan-builder.js";
 import type { SegmentationResult } from "../segmentation/segmenter.js";
 import type { VisualTimelineItem } from "../timeline/timeline-builder.js";
 import type { TranscriptResult } from "../transcription/transcriber.js";
@@ -11,7 +12,8 @@ export function exportQualityReport(
   segmentation: SegmentationResult,
   timeline: VisualTimelineItem[],
   assetRequirements: SceneAssetRequirement[],
-  assetManifest: AssetManifestEntry[]
+  assetManifest: AssetManifestEntry[],
+  renderPlan: VideoRenderPlan
 ): string {
   const chapterCount = segmentation.chapters.length;
   const itemCount = countItems(segmentation);
@@ -77,6 +79,19 @@ export function exportQualityReport(
     `- Missing slots: ${countManifestStatus(assetManifest, "missing")}`,
     `- Selected slots: ${countManifestStatus(assetManifest, "selected")}`,
     `- Rejected slots: ${countManifestStatus(assetManifest, "rejected")}`
+  );
+
+  lines.push(
+    "",
+    "## Render Readiness Summary",
+    "",
+    `- Total scenes: ${renderPlan.summary.totalScenes}`,
+    `- Ready scenes: ${renderPlan.summary.readyScenes}`,
+    `- Blocked scenes: ${renderPlan.summary.blockedScenes}`,
+    `- Total required assets: ${renderPlan.summary.totalRequiredAssets}`,
+    `- Selected assets: ${renderPlan.summary.totalSelectedAssets}`,
+    `- Missing assets: ${renderPlan.summary.totalMissingAssets}`,
+    `- Ready to render: ${renderPlan.summary.readyToRender ? "Yes" : "No"}`
   );
 
   lines.push(

@@ -1,6 +1,7 @@
 import type { AssetManifestEntry } from "../assets/asset-manifest-builder.js";
 import type { SceneAssetRequirement } from "../assets/asset-requirements-builder.js";
 import type { SceneSegment } from "../segmentation/segmenter.js";
+import type { VideoRenderPlan } from "../render/render-plan-builder.js";
 import type { VisualTimelineItem } from "../timeline/timeline-builder.js";
 import { formatDurationRange } from "../utils/time.js";
 
@@ -9,6 +10,7 @@ export function exportEditingGuide(
   timeline: VisualTimelineItem[],
   assetRequirements: SceneAssetRequirement[],
   assetManifest: AssetManifestEntry[],
+  renderPlan: VideoRenderPlan,
   qualityWarnings: string[] = []
 ): string {
   const lines: string[] = [
@@ -20,6 +22,8 @@ export function exportEditingGuide(
     "- Pace: clean editorial cuts with 5-12 second scenes",
     "- Visual direction: polished capsule wardrobe, styling details, outfit transitions",
     "- Asset slots are tracked in output/asset_manifest.json",
+    "- Render plan: output/render_plan.json",
+    `- Ready to render: ${renderPlan.summary.readyToRender ? "Yes" : "No"}`,
     "",
     "## Quality Warnings",
     ""

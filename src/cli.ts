@@ -8,8 +8,10 @@ import { exportAssetRequirements } from "./export/asset-requirements-exporter.js
 import { exportVisualTimelineCsv } from "./export/csv-exporter.js";
 import { exportEditingGuide } from "./export/markdown-exporter.js";
 import { exportQualityReport } from "./export/quality-report-exporter.js";
+import { exportRenderPlan } from "./export/render-plan-exporter.js";
 import { exportSceneSegments } from "./export/scene-segments-exporter.js";
 import { exportSrt } from "./export/srt-exporter.js";
+import { buildRenderPlan } from "./render/render-plan-builder.js";
 import { segmentTranscript } from "./segmentation/segmenter.js";
 import { buildVisualTimeline } from "./timeline/timeline-builder.js";
 import { DevTranscriptTranscriber } from "./transcription/dev-transcript-transcriber.js";
@@ -24,6 +26,7 @@ async function main(): Promise<void> {
   const timeline = buildVisualTimeline(segmentation.scenes);
   const assetRequirements = buildAssetRequirements(timeline);
   const assetManifest = resolveManualAssets(buildAssetManifest(assetRequirements), "assets");
+  const renderPlan = buildRenderPlan({ timelineItems: timeline, manifest: assetManifest });
 
   await ensureDir(config.outputDir);
   await writeTextFile(path.join(config.outputDir, "transcript.txt"), transcript.text + "\n");
@@ -31,10 +34,11 @@ async function main(): Promise<void> {
   await writeTextFile(path.join(config.outputDir, "scene_segments.json"), JSON.stringify(exportSceneSegments(segmentation, timeline), null, 2) + "\n");
   await writeTextFile(path.join(config.outputDir, "asset_requirements.json"), exportAssetRequirements(assetRequirements));
   await writeTextFile(path.join(config.outputDir, "asset_manifest.json"), exportAssetManifest(assetManifest));
+  await writeTextFile(path.join(config.outputDir, "render_plan.json"), exportRenderPlan(renderPlan));
   await writeTextFile(path.join(config.outputDir, "visual_timeline.csv"), exportVisualTimelineCsv(timeline));
-  await writeTextFile(path.join(config.outputDir, "editing_guide.md"), exportEditingGuide(segmentation.scenes, timeline, assetRequirements, assetManifest, segmentation.qualityWarnings));
+  await writeTextFile(path.join(config.outputDir, "editing_guide.md"), exportEditingGuide(segmentation.scenes, timeline, assetRequirements, assetManifest, renderPlan, segmentation.qualityWarnings));
   await writeTextFile(path.join(config.outputDir, "subtitles.srt"), exportSrt(segmentation.scenes));
-  await writeTextFile(path.join(config.outputDir, "quality_report.md"), exportQualityReport(transcript, segmentation, timeline, assetRequirements, assetManifest));
+  await writeTextFile(path.join(config.outputDir, "quality_report.md"), exportQualityReport(transcript, segmentation, timeline, assetRequirements, assetManifest, renderPlan));
 
   console.log(`Generated ${segmentation.scenes.length} scene segments from ${transcript.source} via ${transcript.provider}.`);
   if (segmentation.qualityWarnings.length > 0) {
