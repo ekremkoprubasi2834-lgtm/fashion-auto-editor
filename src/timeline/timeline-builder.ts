@@ -1,6 +1,23 @@
 import { chooseVisualLayout, type VisualLayoutType } from "../layout/visual-layout-engine.js";
 import type { SceneSegment } from "../segmentation/segmenter.js";
 
+export type MotionType =
+  | "slow_zoom_in"
+  | "slow_zoom_out"
+  | "pan_left"
+  | "pan_right"
+  | "pan_up"
+  | "pan_down"
+  | "push_in"
+  | "ken_burns"
+  | "comparison_reveal";
+
+export interface MotionPlan {
+  type: MotionType;
+  intensity: "subtle" | "medium";
+  beatCuts: number[];
+}
+
 export interface VisualTimelineItem {
   startTime: string;
   endTime: string;
@@ -12,13 +29,21 @@ export interface VisualTimelineItem {
   section: string;
   spokenText: string;
   layoutType: VisualLayoutType;
+  motion: MotionPlan;
   visualIntent: string;
   suggestedAssetFolder: string;
   searchKeywords: string[];
 }
 
-export function buildVisualTimeline(segments: SceneSegment[]): VisualTimelineItem[] {
+export function buildVisualTimeline(
+  segments: SceneSegment[],
+  options: { targetDurationSeconds?: number } = {}
+): VisualTimelineItem[] {
   let previousEntry: FashionKeywordEntry | undefined;
+  const naturalDuration = segments[segments.length - 1]?.endSeconds ?? 0;
+  const scale = options.targetDurationSeconds && naturalDuration > 0
+    ? options.targetDurationSeconds / naturalDuration
+    : 1;
 
   return segments.map((segment, index) => {
     const visual = createFashionVisualIntent(segment.spokenText, segment.section, segment.id, previousEntry);
@@ -32,8 +57,8 @@ export function buildVisualTimeline(segments: SceneSegment[]): VisualTimelineIte
     });
 
     return {
-      startTime: secondsToClock(segment.startSeconds),
-      endTime: secondsToClock(segment.endSeconds),
+      startTime: secondsToClock(segment.startSeconds * scale),
+      endTime: secondsToClock(segment.endSeconds * scale),
       globalSceneIndex: index + 1,
       chapter: segment.chapter,
       itemIndex: segment.itemIndex,
@@ -42,11 +67,39 @@ export function buildVisualTimeline(segments: SceneSegment[]): VisualTimelineIte
       section: segment.section,
       spokenText: segment.spokenText,
       layoutType,
+      motion: chooseMotionPlan(layoutType, index),
       visualIntent: visual.intent,
       suggestedAssetFolder: visual.folder,
       searchKeywords: visual.keywords
     };
   });
+}
+
+function chooseMotionPlan(layoutType: VisualLayoutType, index: number): MotionPlan {
+  if (layoutType === "comparison_2") {
+    return { type: "comparison_reveal", intensity: "subtle", beatCuts: [0.42, 0.72] };
+  }
+
+  if (layoutType === "detail_focus") {
+    return { type: "push_in", intensity: "subtle", beatCuts: [0.55] };
+  }
+
+  const rotation: MotionType[] = [
+    "slow_zoom_in",
+    "pan_right",
+    "slow_zoom_out",
+    "pan_left",
+    "ken_burns",
+    "pan_up",
+    "push_in",
+    "pan_down"
+  ];
+
+  return {
+    type: rotation[index % rotation.length],
+    intensity: "subtle",
+    beatCuts: layoutType === "moodboard_2" || layoutType === "moodboard_3" ? [0.5] : []
+  };
 }
 
 interface FashionKeywordEntry {
@@ -400,8 +453,7 @@ function dedupe(values: string[]): string[] {
 }
 
 function secondsToClock(seconds: number): string {
-  const rounded = Math.round(seconds);
-  const minutes = Math.floor(rounded / 60);
-  const rest = rounded % 60;
-  return `${String(minutes).padStart(2, "0")}:${String(rest).padStart(2, "0")}`;
+  const minutes = Math.floor(seconds / 60);
+  const rest = seconds - minutes * 60;
+  return `${String(minutes).padStart(2, "0")}:${rest.toFixed(2).padStart(5, "0")}`;
 }

@@ -26,10 +26,32 @@ type SlotDefinition = {
 };
 
 const SLOT_DEFINITIONS: Record<VisualLayoutType, SlotDefinition[]> = {
-  single_blur: [
+  single_focus: [
     {
       slot: "primary",
-      purpose: "Main vertical fashion visual for this scene."
+      purpose: "Single exact outfit visual matching the spoken clothing items and colors."
+    }
+  ],
+  sequence_single: [
+    {
+      slot: "primary",
+      purpose: "Single strong outfit visual for a moving sequence within this scene."
+    }
+  ],
+  detail_focus: [
+    {
+      slot: "primary",
+      purpose: "Close or medium detail visual matching the spoken styling detail."
+    }
+  ],
+  moodboard_2: [
+    {
+      slot: "left",
+      purpose: "First matching outfit variation."
+    },
+    {
+      slot: "right",
+      purpose: "Second matching outfit variation."
     }
   ],
   moodboard_3: [

@@ -19,6 +19,7 @@ import { exportMusicMixStatus } from "./export/music-mix-status-exporter.js";
 import { exportSubtitleBurnStatus } from "./export/subtitle-burn-status-exporter.js";
 import { exportFinalPreviewStatus } from "./export/final-preview-status-exporter.js";
 import { runFfmpegPreflight } from "./render/ffmpeg-preflight.js";
+import { probeMediaDurationSeconds } from "./render/media-duration.js";
 import { buildRenderPlan } from "./render/render-plan-builder.js";
 import { renderRoughCutPreview, type RoughCutRenderResult } from "./render/rough-cut-renderer.js";
 import { renderFirstReadyScenePreview, type ScenePreviewRenderResult } from "./render/scene-preview-renderer.js";
@@ -38,7 +39,10 @@ async function main(): Promise<void> {
   const transcriber = await createTranscriber();
   const transcript = await transcriber.transcribe();
   const segmentation = segmentTranscript(transcript.text);
-  const timeline = buildVisualTimeline(segmentation.scenes);
+  const voiceoverDurationSeconds = await probeMediaDurationSeconds(config.inputVoiceoverPath);
+  const timeline = buildVisualTimeline(segmentation.scenes, {
+    targetDurationSeconds: voiceoverDurationSeconds ?? undefined
+  });
   const assetRequirements = buildAssetRequirements(timeline);
   const assetManifest = resolveManualAssets(buildAssetManifest(assetRequirements), "assets");
   const renderPlan = buildRenderPlan({ timelineItems: timeline, manifest: assetManifest });

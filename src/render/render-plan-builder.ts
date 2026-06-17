@@ -1,5 +1,5 @@
 import type { AssetManifestEntry } from "../assets/asset-manifest-builder.js";
-import type { VisualTimelineItem } from "../timeline/timeline-builder.js";
+import type { MotionPlan, VisualTimelineItem } from "../timeline/timeline-builder.js";
 
 export type RenderPlanAsset = {
   slot: string;
@@ -15,6 +15,7 @@ export type SceneRenderPlan = {
   itemTitle: string | null;
   sceneIndex: number;
   layoutType: string;
+  motion: MotionPlan;
   startTime: string;
   endTime: string;
   spokenText: string;
@@ -88,6 +89,7 @@ function buildSceneRenderPlan(item: VisualTimelineItem, manifest: AssetManifestE
     itemTitle: item.itemTitle,
     sceneIndex: item.sceneIndex,
     layoutType: item.layoutType,
+    motion: item.motion,
     startTime: item.startTime,
     endTime: item.endTime,
     spokenText: item.spokenText,

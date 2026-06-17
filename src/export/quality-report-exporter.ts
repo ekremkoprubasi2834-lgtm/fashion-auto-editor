@@ -68,7 +68,10 @@ export function exportQualityReport(
     "",
     "## Layout Summary",
     "",
-    `- single_blur: ${countLayout(timeline, "single_blur")} scenes`,
+    `- single_focus: ${countLayout(timeline, "single_focus")} scenes`,
+    `- sequence_single: ${countLayout(timeline, "sequence_single")} scenes`,
+    `- detail_focus: ${countLayout(timeline, "detail_focus")} scenes`,
+    `- moodboard_2: ${countLayout(timeline, "moodboard_2")} scenes`,
     `- moodboard_3: ${countLayout(timeline, "moodboard_3")} scenes`,
     `- comparison_2: ${countLayout(timeline, "comparison_2")} scenes`,
     `- recap_grid: ${countLayout(timeline, "recap_grid")} scenes`
@@ -79,7 +82,10 @@ export function exportQualityReport(
     "## Asset Requirements Summary",
     "",
     `- Total required assets: ${countRequiredAssets(assetRequirements)}`,
-    `- single_blur assets: ${countRequiredAssetsByLayout(assetRequirements, "single_blur")}`,
+    `- single_focus assets: ${countRequiredAssetsByLayout(assetRequirements, "single_focus")}`,
+    `- sequence_single assets: ${countRequiredAssetsByLayout(assetRequirements, "sequence_single")}`,
+    `- detail_focus assets: ${countRequiredAssetsByLayout(assetRequirements, "detail_focus")}`,
+    `- moodboard_2 assets: ${countRequiredAssetsByLayout(assetRequirements, "moodboard_2")}`,
     `- moodboard_3 assets: ${countRequiredAssetsByLayout(assetRequirements, "moodboard_3")}`,
     `- comparison_2 assets: ${countRequiredAssetsByLayout(assetRequirements, "comparison_2")}`,
     `- recap_grid assets: ${countRequiredAssetsByLayout(assetRequirements, "recap_grid")}`

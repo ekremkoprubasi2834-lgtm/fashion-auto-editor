@@ -77,7 +77,7 @@ function buildFfmpegCommand(scene: SceneRenderPlan, outputDir: string): FfmpegRe
   const args = ["-y"];
 
   for (const asset of selectedAssets) {
-    args.push("-loop", "1", "-t", String(duration), "-i", asset.localPath ?? "");
+    args.push("-framerate", "30", "-loop", "1", "-t", String(duration), "-i", asset.localPath ?? "");
   }
 
   const filter = buildFilter(scene.layoutType);
@@ -129,6 +129,18 @@ function buildFilter(layoutType: string): { inputCount: number; filterComplex: s
           "[before][after]hstack=inputs=2,scale=1920:1080:out_range=tv,format=yuv420p[v]"
         ].join(";")
       };
+    case "moodboard_2":
+      return {
+        inputCount: 2,
+        filterComplex: [
+          "[0:v]scale=960:1080:force_original_aspect_ratio=increase,crop=960:1080,setsar=1[left]",
+          "[1:v]scale=960:1080:force_original_aspect_ratio=increase,crop=960:1080,setsar=1[right]",
+          "[left][right]hstack=inputs=2,scale=1920:1080:out_range=tv,format=yuv420p[v]"
+        ].join(";")
+      };
+    case "single_focus":
+    case "sequence_single":
+    case "detail_focus":
     case "single_blur":
       return {
         inputCount: 1,
@@ -160,11 +172,11 @@ function estimateDurationSeconds(scene: SceneRenderPlan): number {
     return 6;
   }
 
-  return Math.max(1, Math.ceil(end - start));
+  return Math.max(1, end - start);
 }
 
 function parseClockSeconds(value: string): number | null {
-  const parts = value.split(":").map((part) => Number.parseInt(part, 10));
+  const parts = value.split(":").map((part) => Number.parseFloat(part));
 
   if (parts.some((part) => Number.isNaN(part))) {
     return null;
