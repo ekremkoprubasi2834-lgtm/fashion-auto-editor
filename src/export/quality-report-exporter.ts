@@ -1,3 +1,4 @@
+import type { SceneAssetRequirement } from "../assets/asset-requirements-builder.js";
 import { runGermanFashionQa, type QualityWarning } from "../quality/german-fashion-qa.js";
 import { runSubscriberConversionQa, type SubscriberQaWarning } from "../quality/subscriber-conversion-qa.js";
 import type { SegmentationResult } from "../segmentation/segmenter.js";
@@ -7,7 +8,8 @@ import type { TranscriptResult } from "../transcription/transcriber.js";
 export function exportQualityReport(
   transcript: TranscriptResult,
   segmentation: SegmentationResult,
-  timeline: VisualTimelineItem[]
+  timeline: VisualTimelineItem[],
+  assetRequirements: SceneAssetRequirement[]
 ): string {
   const chapterCount = segmentation.chapters.length;
   const itemCount = countItems(segmentation);
@@ -52,6 +54,17 @@ export function exportQualityReport(
     `- moodboard_3: ${countLayout(timeline, "moodboard_3")} scenes`,
     `- comparison_2: ${countLayout(timeline, "comparison_2")} scenes`,
     `- recap_grid: ${countLayout(timeline, "recap_grid")} scenes`
+  );
+
+  lines.push(
+    "",
+    "## Asset Requirements Summary",
+    "",
+    `- Total required assets: ${countRequiredAssets(assetRequirements)}`,
+    `- single_blur assets: ${countRequiredAssetsByLayout(assetRequirements, "single_blur")}`,
+    `- moodboard_3 assets: ${countRequiredAssetsByLayout(assetRequirements, "moodboard_3")}`,
+    `- comparison_2 assets: ${countRequiredAssetsByLayout(assetRequirements, "comparison_2")}`,
+    `- recap_grid assets: ${countRequiredAssetsByLayout(assetRequirements, "recap_grid")}`
   );
 
   lines.push(
@@ -109,6 +122,19 @@ function countItems(segmentation: SegmentationResult): number {
 
 function countLayout(timeline: VisualTimelineItem[], layoutType: VisualTimelineItem["layoutType"]): number {
   return timeline.filter((item) => item.layoutType === layoutType).length;
+}
+
+function countRequiredAssets(requirements: SceneAssetRequirement[]): number {
+  return requirements.reduce((total, requirement) => total + requirement.requiredAssetCount, 0);
+}
+
+function countRequiredAssetsByLayout(
+  requirements: SceneAssetRequirement[],
+  layoutType: VisualTimelineItem["layoutType"]
+): number {
+  return requirements
+    .filter((requirement) => requirement.layoutType === layoutType)
+    .reduce((total, requirement) => total + requirement.requiredAssetCount, 0);
 }
 
 function formatGermanFashionWarning(warning: QualityWarning): string {

@@ -1,5 +1,7 @@
 import path from "node:path";
+import { buildAssetRequirements } from "./assets/asset-requirements-builder.js";
 import { config } from "./config.js";
+import { exportAssetRequirements } from "./export/asset-requirements-exporter.js";
 import { exportVisualTimelineCsv } from "./export/csv-exporter.js";
 import { exportEditingGuide } from "./export/markdown-exporter.js";
 import { exportQualityReport } from "./export/quality-report-exporter.js";
@@ -17,15 +19,17 @@ async function main(): Promise<void> {
   const transcript = await transcriber.transcribe();
   const segmentation = segmentTranscript(transcript.text);
   const timeline = buildVisualTimeline(segmentation.scenes);
+  const assetRequirements = buildAssetRequirements(timeline);
 
   await ensureDir(config.outputDir);
   await writeTextFile(path.join(config.outputDir, "transcript.txt"), transcript.text + "\n");
   await writeTextFile(path.join(config.outputDir, "speech_segments.json"), JSON.stringify(transcript.speechSegments, null, 2) + "\n");
   await writeTextFile(path.join(config.outputDir, "scene_segments.json"), JSON.stringify(exportSceneSegments(segmentation, timeline), null, 2) + "\n");
+  await writeTextFile(path.join(config.outputDir, "asset_requirements.json"), exportAssetRequirements(assetRequirements));
   await writeTextFile(path.join(config.outputDir, "visual_timeline.csv"), exportVisualTimelineCsv(timeline));
-  await writeTextFile(path.join(config.outputDir, "editing_guide.md"), exportEditingGuide(segmentation.scenes, timeline, segmentation.qualityWarnings));
+  await writeTextFile(path.join(config.outputDir, "editing_guide.md"), exportEditingGuide(segmentation.scenes, timeline, assetRequirements, segmentation.qualityWarnings));
   await writeTextFile(path.join(config.outputDir, "subtitles.srt"), exportSrt(segmentation.scenes));
-  await writeTextFile(path.join(config.outputDir, "quality_report.md"), exportQualityReport(transcript, segmentation, timeline));
+  await writeTextFile(path.join(config.outputDir, "quality_report.md"), exportQualityReport(transcript, segmentation, timeline, assetRequirements));
 
   console.log(`Generated ${segmentation.scenes.length} scene segments from ${transcript.source} via ${transcript.provider}.`);
   if (segmentation.qualityWarnings.length > 0) {

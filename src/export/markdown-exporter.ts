@@ -1,3 +1,4 @@
+import type { SceneAssetRequirement } from "../assets/asset-requirements-builder.js";
 import type { SceneSegment } from "../segmentation/segmenter.js";
 import type { VisualTimelineItem } from "../timeline/timeline-builder.js";
 import { formatDurationRange } from "../utils/time.js";
@@ -5,6 +6,7 @@ import { formatDurationRange } from "../utils/time.js";
 export function exportEditingGuide(
   segments: SceneSegment[],
   timeline: VisualTimelineItem[],
+  assetRequirements: SceneAssetRequirement[],
   qualityWarnings: string[] = []
 ): string {
   const lines: string[] = [
@@ -28,9 +30,9 @@ export function exportEditingGuide(
 
   lines.push("## Scene Plan", "");
 
-  appendChapterScenes(lines, "Intro", segments, timeline);
-  appendMainContent(lines, segments, timeline);
-  appendChapterScenes(lines, "Outro", segments, timeline);
+  appendChapterScenes(lines, "Intro", segments, timeline, assetRequirements);
+  appendMainContent(lines, segments, timeline, assetRequirements);
+  appendChapterScenes(lines, "Outro", segments, timeline, assetRequirements);
 
   lines.push(
     "## Editing Notes",
@@ -48,7 +50,8 @@ function appendChapterScenes(
   lines: string[],
   chapter: SceneSegment["chapter"],
   segments: SceneSegment[],
-  timeline: VisualTimelineItem[]
+  timeline: VisualTimelineItem[],
+  assetRequirements: SceneAssetRequirement[]
 ): void {
   const chapterSegments = segments.filter((segment) => segment.chapter === chapter);
 
@@ -59,11 +62,16 @@ function appendChapterScenes(
   lines.push(`# Chapter: ${chapter}`, "");
 
   for (const segment of chapterSegments) {
-    appendScene(lines, segment, timeline[segment.id - 1]);
+    appendScene(lines, segment, timeline[segment.id - 1], assetRequirements[segment.id - 1]);
   }
 }
 
-function appendMainContent(lines: string[], segments: SceneSegment[], timeline: VisualTimelineItem[]): void {
+function appendMainContent(
+  lines: string[],
+  segments: SceneSegment[],
+  timeline: VisualTimelineItem[],
+  assetRequirements: SceneAssetRequirement[]
+): void {
   const mainSegments = segments.filter((segment) => segment.chapter === "Main Content");
 
   if (mainSegments.length === 0) {
@@ -84,18 +92,25 @@ function appendMainContent(lines: string[], segments: SceneSegment[], timeline: 
     lines.push(`## Item ${itemIndex}: ${itemTitle}`, "");
 
     for (const segment of itemSegments) {
-      appendScene(lines, segment, timeline[segment.id - 1]);
+      appendScene(lines, segment, timeline[segment.id - 1], assetRequirements[segment.id - 1]);
     }
   }
 }
 
-function appendScene(lines: string[], segment: SceneSegment, item: VisualTimelineItem): void {
+function appendScene(
+  lines: string[],
+  segment: SceneSegment,
+  item: VisualTimelineItem,
+  assetRequirement: SceneAssetRequirement
+): void {
   lines.push(
     `### Scene ${segment.sceneIndex}`,
     "",
     `- Time: ${formatDurationRange(segment.startSeconds, segment.endSeconds)}`,
     `- Spoken text: ${segment.spokenText}`,
     `- Layout: ${item.layoutType}`,
+    `- Required assets: ${assetRequirement.requiredAssetCount}`,
+    `- Slots: ${assetRequirement.slots.map((slot) => slot.slot).join(", ")}`,
     `- Visual intent: ${item.visualIntent}`,
     `- Suggested asset folder: ${item.suggestedAssetFolder}`,
     `- Search keywords: ${item.searchKeywords.join(", ")}`,
