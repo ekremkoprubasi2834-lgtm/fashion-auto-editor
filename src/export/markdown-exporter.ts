@@ -1,5 +1,6 @@
 import type { AssetManifestEntry } from "../assets/asset-manifest-builder.js";
 import type { SceneAssetRequirement } from "../assets/asset-requirements-builder.js";
+import type { FfmpegPreflightResult } from "../render/ffmpeg-preflight.js";
 import type { SceneSegment } from "../segmentation/segmenter.js";
 import type { VideoRenderPlan } from "../render/render-plan-builder.js";
 import type { VisualTimelineItem } from "../timeline/timeline-builder.js";
@@ -11,6 +12,7 @@ export function exportEditingGuide(
   assetRequirements: SceneAssetRequirement[],
   assetManifest: AssetManifestEntry[],
   renderPlan: VideoRenderPlan,
+  renderPreflight: FfmpegPreflightResult,
   qualityWarnings: string[] = []
 ): string {
   const lines: string[] = [
@@ -23,7 +25,9 @@ export function exportEditingGuide(
     "- Visual direction: polished capsule wardrobe, styling details, outfit transitions",
     "- Asset slots are tracked in output/asset_manifest.json",
     "- Render plan: output/render_plan.json",
+    "- Render preflight: output/render_preflight.md",
     `- Ready to render: ${renderPlan.summary.readyToRender ? "Yes" : "No"}`,
+    `- FFmpeg installed: ${renderPreflight.ffmpegInstalled ? "Yes" : "No"}`,
     "",
     "## Quality Warnings",
     ""

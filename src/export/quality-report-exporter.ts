@@ -2,6 +2,7 @@ import type { AssetManifestEntry } from "../assets/asset-manifest-builder.js";
 import type { SceneAssetRequirement } from "../assets/asset-requirements-builder.js";
 import { runGermanFashionQa, type QualityWarning } from "../quality/german-fashion-qa.js";
 import { runSubscriberConversionQa, type SubscriberQaWarning } from "../quality/subscriber-conversion-qa.js";
+import type { FfmpegPreflightResult } from "../render/ffmpeg-preflight.js";
 import type { VideoRenderPlan } from "../render/render-plan-builder.js";
 import type { SegmentationResult } from "../segmentation/segmenter.js";
 import type { VisualTimelineItem } from "../timeline/timeline-builder.js";
@@ -13,7 +14,8 @@ export function exportQualityReport(
   timeline: VisualTimelineItem[],
   assetRequirements: SceneAssetRequirement[],
   assetManifest: AssetManifestEntry[],
-  renderPlan: VideoRenderPlan
+  renderPlan: VideoRenderPlan,
+  renderPreflight: FfmpegPreflightResult
 ): string {
   const chapterCount = segmentation.chapters.length;
   const itemCount = countItems(segmentation);
@@ -92,6 +94,15 @@ export function exportQualityReport(
     `- Selected assets: ${renderPlan.summary.totalSelectedAssets}`,
     `- Missing assets: ${renderPlan.summary.totalMissingAssets}`,
     `- Ready to render: ${renderPlan.summary.readyToRender ? "Yes" : "No"}`
+  );
+
+  lines.push(
+    "",
+    "## FFmpeg Preflight Summary",
+    "",
+    `- FFmpeg installed: ${renderPreflight.ffmpegInstalled ? "Yes" : "No"}`,
+    `- Ready to render: ${renderPreflight.readyToRender ? "Yes" : "No"}`,
+    `- Blocking reasons: ${renderPreflight.blockingReasons.length}`
   );
 
   lines.push(
