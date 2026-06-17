@@ -9,6 +9,7 @@ export interface AppConfig {
   openaiApiKey?: string;
   transcriptionProvider: "openai" | "dev";
   transcriptionModel: string;
+  enableSubtitleBurn: boolean;
 }
 
 loadDotEnvIfPresent();
@@ -20,7 +21,8 @@ export const config: AppConfig = {
   outputDir: process.env.OUTPUT_DIR ?? "output",
   openaiApiKey: process.env.OPENAI_API_KEY,
   transcriptionProvider: process.env.TRANSCRIPTION_PROVIDER === "dev" ? "dev" : "openai",
-  transcriptionModel: process.env.TRANSCRIPTION_MODEL ?? "gpt-4o-mini-transcribe"
+  transcriptionModel: process.env.TRANSCRIPTION_MODEL ?? "gpt-4o-mini-transcribe",
+  enableSubtitleBurn: process.env.ENABLE_SUBTITLE_BURN === "true"
 };
 
 function loadDotEnvIfPresent(envPath = ".env"): void {

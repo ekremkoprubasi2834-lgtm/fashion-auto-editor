@@ -105,7 +105,7 @@ export async function renderRoughCutPreview(input: {
 }
 
 function buildSceneCommand(scene: SceneRenderPlan, tmpDir: string): SceneCommand {
-  const outputPath = path.join(tmpDir, `scene-${scene.sceneIndex}.mp4`);
+  const outputPath = path.join(tmpDir, `scene-${scene.globalSceneIndex}.mp4`);
   const duration = Math.max(3, estimateDurationSeconds(scene));
   const layout = buildLayoutSpec(scene.layoutType);
 
@@ -136,7 +136,9 @@ function buildSceneCommand(scene: SceneRenderPlan, tmpDir: string): SceneCommand
     "-c:v",
     "libx264",
     "-preset",
-    "ultrafast",
+    "fast",
+    "-crf",
+    "20",
     "-pix_fmt",
     "yuv420p",
     outputPath
@@ -151,42 +153,81 @@ function buildLayoutSpec(layoutType: string): LayoutSpec | null {
       return {
         panelSize: "640x1080",
         filterComplex: [
-          "[0:v]scale=640:1080:force_original_aspect_ratio=increase,crop=640:1080,setsar=1[left]",
-          "[1:v]scale=640:1080:force_original_aspect_ratio=increase,crop=640:1080,setsar=1[center]",
-          "[2:v]scale=640:1080:force_original_aspect_ratio=increase,crop=640:1080,setsar=1[right]",
-          "[left][center][right]hstack=inputs=3,scale=1920:1080:out_range=tv,format=yuv420p[v]"
+          buildTopAlignedPanelChain(0, 640, 1080, "left"),
+          buildTopAlignedPanelChain(1, 640, 1080, "center"),
+          buildTopAlignedPanelChain(2, 640, 1080, "right"),
+          "[left][center][right]hstack=inputs=3,scale=1920:1080:flags=lanczos,format=yuv420p[v]"
         ].join(";")
       };
     case "comparison_2":
       return {
         panelSize: "960x1080",
         filterComplex: [
-          "[0:v]scale=960:1080:force_original_aspect_ratio=increase,crop=960:1080,setsar=1[before]",
-          "[1:v]scale=960:1080:force_original_aspect_ratio=increase,crop=960:1080,setsar=1[after]",
-          "[before][after]hstack=inputs=2,scale=1920:1080:out_range=tv,format=yuv420p[v]"
+          buildPanelChain(0, 960, 1080, 900, 1000, "before"),
+          buildPanelChain(1, 960, 1080, 900, 1000, "after"),
+          "[before][after]hstack=inputs=2,scale=1920:1080:flags=lanczos,format=yuv420p[v]"
         ].join(";")
       };
     case "single_blur":
       return {
         panelSize: "1920x1080",
-        filterComplex: "[0:v]scale=1920:1080:force_original_aspect_ratio=increase:out_range=tv,crop=1920:1080,setsar=1,format=yuv420p[v]"
+        filterComplex: [
+          buildPanelChain(0, 1920, 1080, 1820, 1020, "single"),
+          "[single]format=yuv420p[v]"
+        ].join(";")
       };
     case "recap_grid":
       return {
         panelSize: "960x540",
         filterComplex: [
-          "[0:v]scale=960:540:force_original_aspect_ratio=increase,crop=960:540,setsar=1[top_left]",
-          "[1:v]scale=960:540:force_original_aspect_ratio=increase,crop=960:540,setsar=1[top_right]",
-          "[2:v]scale=960:540:force_original_aspect_ratio=increase,crop=960:540,setsar=1[bottom_left]",
-          "[3:v]scale=960:540:force_original_aspect_ratio=increase,crop=960:540,setsar=1[bottom_right]",
+          buildPanelChain(0, 960, 540, 900, 480, "top_left"),
+          buildPanelChain(1, 960, 540, 900, 480, "top_right"),
+          buildPanelChain(2, 960, 540, 900, 480, "bottom_left"),
+          buildPanelChain(3, 960, 540, 900, 480, "bottom_right"),
           "[top_left][top_right]hstack=inputs=2[top]",
           "[bottom_left][bottom_right]hstack=inputs=2[bottom]",
-          "[top][bottom]vstack=inputs=2,scale=1920:1080:out_range=tv,format=yuv420p[v]"
+          "[top][bottom]vstack=inputs=2,scale=1920:1080:flags=lanczos,format=yuv420p[v]"
         ].join(";")
       };
     default:
       return null;
   }
+}
+
+function buildPanelChain(
+  index: number,
+  panelWidth: number,
+  panelHeight: number,
+  foregroundWidth: number,
+  foregroundHeight: number,
+  outLabel: string
+): string {
+  return [
+    `[${index}:v]split=2[bg${index}][fg${index}]`,
+    `[bg${index}]scale=${panelWidth}:${panelHeight}:force_original_aspect_ratio=increase:flags=lanczos,crop=${panelWidth}:${panelHeight},boxblur=24:2,eq=brightness=-0.07:saturation=0.92,setsar=1[bgp${index}]`,
+    `[fg${index}]scale=${foregroundWidth}:${foregroundHeight}:force_original_aspect_ratio=decrease:flags=lanczos,setsar=1[fgp${index}]`,
+    `[bgp${index}][fgp${index}]overlay=(W-w)/2:(H-h)/2[${outLabel}]`
+  ].join(";");
+}
+
+// Top-anchored panel: foreground fills the panel width and is pinned below a
+// fixed top margin, cropping excess from the bottom so subjects' heads land on
+// a consistent horizontal band across panels (fashion moodboard look).
+function buildTopAlignedPanelChain(
+  index: number,
+  panelWidth: number,
+  panelHeight: number,
+  outLabel: string
+): string {
+  const topMargin = 40;
+  const maxForegroundHeight = panelHeight - topMargin * 2;
+
+  return [
+    `[${index}:v]split=2[bg${index}][fg${index}]`,
+    `[bg${index}]scale=${panelWidth}:${panelHeight}:force_original_aspect_ratio=increase:flags=lanczos,crop=${panelWidth}:${panelHeight},boxblur=24:2,eq=brightness=-0.07:saturation=0.92,setsar=1[bgp${index}]`,
+    `[fg${index}]scale=${panelWidth}:-2:flags=lanczos,crop=${panelWidth}:'min(ih,${maxForegroundHeight})':0:0,setsar=1[fgp${index}]`,
+    `[bgp${index}][fgp${index}]overlay=(W-w)/2:${topMargin}[${outLabel}]`
+  ].join(";");
 }
 
 function countPlaceholderScenes(scenes: SceneRenderPlan[]): number {

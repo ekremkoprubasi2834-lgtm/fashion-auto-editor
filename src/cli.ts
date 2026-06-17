@@ -61,7 +61,7 @@ async function main(): Promise<void> {
 
   const finalPreview = await resolveFinalPreview({
     candidates: [
-      path.join(config.outputDir, "final_preview_with_subtitles.mp4"),
+      ...(config.enableSubtitleBurn ? [path.join(config.outputDir, "final_preview_with_subtitles.mp4")] : []),
       path.join(config.outputDir, "rough_cut_with_voiceover_and_music.mp4"),
       path.join(config.outputDir, "rough_cut_with_voiceover.mp4"),
       path.join(config.outputDir, "rough_cut_preview.mp4")
@@ -181,6 +181,17 @@ async function resolveSubtitleBurn(
   musicMix: MusicMixResult,
   subtitlePath: string
 ): Promise<SubtitleBurnResult> {
+  if (!config.enableSubtitleBurn) {
+    return {
+      attempted: false,
+      rendered: false,
+      inputVideoPath: null,
+      subtitlePath: null,
+      outputPath: null,
+      reason: "Subtitle burn disabled by config."
+    };
+  }
+
   const inputVideoPath = selectBestVideoSource(roughCutPreview, voiceoverMix, musicMix);
 
   if (!inputVideoPath) {

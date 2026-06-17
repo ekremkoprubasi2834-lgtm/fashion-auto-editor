@@ -15,7 +15,7 @@ export type SubtitleBurnResult = {
 const execFileAsync = promisify(execFile);
 
 const FORCE_STYLE =
-  "FontName=Arial,FontSize=28,PrimaryColour=&HFFFFFF&,OutlineColour=&H000000&,BorderStyle=1,Outline=2,Shadow=1,Alignment=2,MarginV=60";
+  "FontName=Arial,FontSize=20,PrimaryColour=&HFFFFFF&,OutlineColour=&H000000&,BorderStyle=1,Outline=1.4,Shadow=0,Alignment=2,MarginV=40";
 
 export async function burnSubtitlesIntoPreview(input: {
   inputVideoPath: string | null;
