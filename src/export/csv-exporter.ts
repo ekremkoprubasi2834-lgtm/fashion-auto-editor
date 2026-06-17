@@ -3,6 +3,10 @@ import type { VisualTimelineItem } from "../timeline/timeline-builder.js";
 const HEADERS = [
   "start_time",
   "end_time",
+  "chapter",
+  "item_index",
+  "item_title",
+  "scene_index",
   "section",
   "spoken_text",
   "visual_intent",
@@ -14,6 +18,10 @@ export function exportVisualTimelineCsv(items: VisualTimelineItem[]): string {
   const rows = items.map((item) => [
     item.startTime,
     item.endTime,
+    item.chapter,
+    item.itemIndex === null ? "" : String(item.itemIndex),
+    item.itemTitle ?? "",
+    String(item.sceneIndex),
     item.section,
     item.spokenText,
     item.visualIntent,

@@ -2,7 +2,11 @@ import type { SceneSegment } from "../segmentation/segmenter.js";
 import type { VisualTimelineItem } from "../timeline/timeline-builder.js";
 import { formatDurationRange } from "../utils/time.js";
 
-export function exportEditingGuide(segments: SceneSegment[], timeline: VisualTimelineItem[]): string {
+export function exportEditingGuide(
+  segments: SceneSegment[],
+  timeline: VisualTimelineItem[],
+  qualityWarnings: string[] = []
+): string {
   const lines: string[] = [
     "# Fashion Video Editing Guide",
     "",
@@ -12,23 +16,21 @@ export function exportEditingGuide(segments: SceneSegment[], timeline: VisualTim
     "- Pace: clean editorial cuts with 5-12 second scenes",
     "- Visual direction: polished capsule wardrobe, styling details, outfit transitions",
     "",
-    "## Scene Plan",
+    "## Quality Warnings",
     ""
   ];
 
-  for (const [index, segment] of segments.entries()) {
-    const item = timeline[index];
-    lines.push(
-      `### Scene ${segment.id}: ${segment.section}`,
-      "",
-      `- Time: ${formatDurationRange(segment.startSeconds, segment.endSeconds)}`,
-      `- Spoken text: ${segment.spokenText}`,
-      `- Visual intent: ${item.visualIntent}`,
-      `- Suggested asset folder: ${item.suggestedAssetFolder}`,
-      `- Search keywords: ${item.searchKeywords.join(", ")}`,
-      ""
-    );
+  if (qualityWarnings.length === 0) {
+    lines.push("- None", "");
+  } else {
+    lines.push(...qualityWarnings.map((warning) => `- ${warning}`), "");
   }
+
+  lines.push("## Scene Plan", "");
+
+  appendChapterScenes(lines, "Intro", segments, timeline);
+  appendMainContent(lines, segments, timeline);
+  appendChapterScenes(lines, "Outro", segments, timeline);
 
   lines.push(
     "## Editing Notes",
@@ -40,4 +42,62 @@ export function exportEditingGuide(segments: SceneSegment[], timeline: VisualTim
   );
 
   return lines.join("\n") + "\n";
+}
+
+function appendChapterScenes(
+  lines: string[],
+  chapter: SceneSegment["chapter"],
+  segments: SceneSegment[],
+  timeline: VisualTimelineItem[]
+): void {
+  const chapterSegments = segments.filter((segment) => segment.chapter === chapter);
+
+  if (chapterSegments.length === 0) {
+    return;
+  }
+
+  lines.push(`# Chapter: ${chapter}`, "");
+
+  for (const segment of chapterSegments) {
+    appendScene(lines, segment, timeline[segment.id - 1]);
+  }
+}
+
+function appendMainContent(lines: string[], segments: SceneSegment[], timeline: VisualTimelineItem[]): void {
+  const mainSegments = segments.filter((segment) => segment.chapter === "Main Content");
+
+  if (mainSegments.length === 0) {
+    return;
+  }
+
+  lines.push("# Chapter: Main Content", "");
+
+  const itemIndexes = [...new Set(
+    mainSegments
+      .map((segment) => segment.itemIndex)
+      .filter((itemIndex): itemIndex is number => itemIndex !== null)
+  )].sort((left, right) => left - right);
+
+  for (const itemIndex of itemIndexes) {
+    const itemSegments = mainSegments.filter((segment) => segment.itemIndex === itemIndex);
+    const itemTitle = itemSegments[0]?.itemTitle ?? `Item ${itemIndex}`;
+    lines.push(`## Item ${itemIndex}: ${itemTitle}`, "");
+
+    for (const segment of itemSegments) {
+      appendScene(lines, segment, timeline[segment.id - 1]);
+    }
+  }
+}
+
+function appendScene(lines: string[], segment: SceneSegment, item: VisualTimelineItem): void {
+  lines.push(
+    `### Scene ${segment.sceneIndex}`,
+    "",
+    `- Time: ${formatDurationRange(segment.startSeconds, segment.endSeconds)}`,
+    `- Spoken text: ${segment.spokenText}`,
+    `- Visual intent: ${item.visualIntent}`,
+    `- Suggested asset folder: ${item.suggestedAssetFolder}`,
+    `- Search keywords: ${item.searchKeywords.join(", ")}`,
+    ""
+  );
 }

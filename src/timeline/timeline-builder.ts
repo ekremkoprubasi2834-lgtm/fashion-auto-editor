@@ -3,6 +3,10 @@ import type { SceneSegment } from "../segmentation/segmenter.js";
 export interface VisualTimelineItem {
   startTime: string;
   endTime: string;
+  chapter: string;
+  itemIndex: number | null;
+  itemTitle: string | null;
+  sceneIndex: number;
   section: string;
   spokenText: string;
   visualIntent: string;
@@ -20,6 +24,10 @@ export function buildVisualTimeline(segments: SceneSegment[]): VisualTimelineIte
     return {
       startTime: secondsToClock(segment.startSeconds),
       endTime: secondsToClock(segment.endSeconds),
+      chapter: segment.chapter,
+      itemIndex: segment.itemIndex,
+      itemTitle: segment.itemTitle,
+      sceneIndex: segment.sceneIndex,
       section: segment.section,
       spokenText: segment.spokenText,
       visualIntent: visual.intent,
@@ -348,7 +356,7 @@ function enrichKeywords(baseKeywords: string[], normalizedText: string): string[
 }
 
 function createFallbackVisual(section: string, sceneId: number, modifiers: string[]): FashionVisual {
-  const intent = section === "hook"
+  const intent = section === "hook" || section === "intro"
     ? "opening fashion problem setup with summer outfit comparison and refined styling promise"
     : "specific editorial women fashion b-roll matching the styling advice with clean outfit details";
 

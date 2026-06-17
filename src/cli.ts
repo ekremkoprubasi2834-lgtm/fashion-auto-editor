@@ -2,6 +2,7 @@ import path from "node:path";
 import { config } from "./config.js";
 import { exportVisualTimelineCsv } from "./export/csv-exporter.js";
 import { exportEditingGuide } from "./export/markdown-exporter.js";
+import { exportSceneSegments } from "./export/scene-segments-exporter.js";
 import { exportSrt } from "./export/srt-exporter.js";
 import { segmentTranscript } from "./segmentation/segmenter.js";
 import { buildVisualTimeline } from "./timeline/timeline-builder.js";
@@ -13,18 +14,21 @@ import { ensureDir, fileExists, writeTextFile } from "./utils/fs.js";
 async function main(): Promise<void> {
   const transcriber = await createTranscriber();
   const transcript = await transcriber.transcribe();
-  const segments = segmentTranscript(transcript.text);
-  const timeline = buildVisualTimeline(segments);
+  const segmentation = segmentTranscript(transcript.text);
+  const timeline = buildVisualTimeline(segmentation.scenes);
 
   await ensureDir(config.outputDir);
   await writeTextFile(path.join(config.outputDir, "transcript.txt"), transcript.text + "\n");
   await writeTextFile(path.join(config.outputDir, "speech_segments.json"), JSON.stringify(transcript.speechSegments, null, 2) + "\n");
-  await writeTextFile(path.join(config.outputDir, "scene_segments.json"), JSON.stringify(segments, null, 2) + "\n");
+  await writeTextFile(path.join(config.outputDir, "scene_segments.json"), JSON.stringify(exportSceneSegments(segmentation, timeline), null, 2) + "\n");
   await writeTextFile(path.join(config.outputDir, "visual_timeline.csv"), exportVisualTimelineCsv(timeline));
-  await writeTextFile(path.join(config.outputDir, "editing_guide.md"), exportEditingGuide(segments, timeline));
-  await writeTextFile(path.join(config.outputDir, "subtitles.srt"), exportSrt(segments));
+  await writeTextFile(path.join(config.outputDir, "editing_guide.md"), exportEditingGuide(segmentation.scenes, timeline, segmentation.qualityWarnings));
+  await writeTextFile(path.join(config.outputDir, "subtitles.srt"), exportSrt(segmentation.scenes));
 
-  console.log(`Generated ${segments.length} scene segments from ${transcript.source} via ${transcript.provider}.`);
+  console.log(`Generated ${segmentation.scenes.length} scene segments from ${transcript.source} via ${transcript.provider}.`);
+  if (segmentation.qualityWarnings.length > 0) {
+    console.warn(`Generated ${segmentation.qualityWarnings.length} quality warning(s).`);
+  }
   console.log(`Output written to ${config.outputDir}.`);
 }
 
