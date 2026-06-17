@@ -322,36 +322,20 @@ Onerilen yol haritasi:
 11. Cok dilli metin QA kurallarini genisletmek.
 12. CapCut opsiyonel son rotus akisini belgelemek.
 
-## German Channel Growth & Trust System
+## 26. German Channel Growth & Trust System
 
-Almanca kanal DNA'si:
+Bu bolum Almanca kadin moda kanali icin buyume, guven, izlenme kalitesi ve yorum/abone donusum sistemini kalici kanal standardi olarak tanimlar.
 
-- Ana kitle: Almanya'daki kadinlar, ozellikle 55+
-- Ana ulke: Almanya
-- Ana vaat: Surekli yeni kiyafet almadan daha elegant, gepflegt, hochwertig ve pahali gorunmek
-- Ana korkular: billig, alt, unmodern, fazla casual veya yanlis kombinlenmis gorunmek
+### 26.1 German Channel DNA
 
-Calisan Almanca kelimeler:
+Hedef kitle ve dil:
 
-- eleganter
-- hochwertiger
-- gepflegter
-- teurer
-- älter
-- billig
-- falsch
-- sofort
-- wirken
-- Sommer-Pieces
-- Styling-Fehler
-
-Guclu formatlar:
-
-- "Die 4 Sommer-Pieces, mit denen du sofort teurer aussiehst"
-- "5 Sommerteile, die dich sofort eleganter und hochwertiger wirken lassen"
-- "6 Styling-Fehler, die Frauen im Sommer weniger elegant wirken lassen"
-- "4 Farben, die dich sofort frischer und gepflegter aussehen lassen"
-- "5 einfache Outfit-Regeln, mit denen du nie billig wirkst"
+- Ana hedef: 35-55 yas arasi kadinlar.
+- Mevcut veride guclu sinyal: 55+ kadin izleyici.
+- Dil: 35-55 arasi kadinlara hitap eden, zarif, saygili, dogal Almanca.
+- Ana ulke: Almanya.
+- Ana vaat: Daha fazla kiyafet almak degil, daha dogru styling kararlariyla daha gepflegt, eleganter, hochwertiger ve stilvoll gorunmek.
+- Ana korkular: billig, alt, unmodern, fazla casual veya yanlis kombinlenmis gorunmek.
 
 Kanal guveni su prensiplerle buyumelidir:
 
@@ -361,13 +345,55 @@ Kanal guveni su prensiplerle buyumelidir:
 - Her videoda uygulanabilir, gercek hayata uygun moda faydasi vermek.
 - Baslikta verilen vaadi videonun icinde eksiksiz karsilamak.
 
-## German Fashion QA Pass
+### 26.2 Winning Video Formula
 
-Almanca metinler, ozellikle 55+ kadin kitle icin dogal Alman moda dili acisindan kontrol edilmelidir.
+Kazanan video sinyali:
+
+- Video: `Die 4 Sommer-Pieces, mit denen du sofort teurer aussiehst (2026)`
+- 15,6K goruntuleme
+- 203K gosterim
+- %6,1 CTR
+- 2:20 ortalama izleme suresi
+- %35,9 retention
+- 20 yorum
+
+Calisan Almanca kelimeler:
+
+- eleganter
+- hochwertiger
+- gepflegter
+- teurer
+- stilvoll
+- sofort
+- wirken
+- Sommer-Pieces
+- Sommerteile
+- Styling-Fehler
+
+Guclu formatlar:
+
+- `Die 4 Sommer-Pieces, mit denen du sofort teurer aussiehst`
+- `5 Sommerteile, die dich sofort eleganter und hochwertiger wirken lassen`
+- `6 Styling-Fehler, die Frauen im Sommer weniger elegant wirken lassen`
+- `4 Farben, die dich sofort frischer und gepflegter aussehen lassen`
+- `5 einfache Outfit-Regeln, mit denen du nie billig wirkst`
+
+### 26.3 German Fashion QA Pass
+
+Almanca metinler dogal Alman moda dili acisindan kontrol edilmelidir.
+
+Zorunlu kontroller:
+
+- Moda terimleri Almanya'da dogal mi?
+- Dil 35-55 yas arasi kadinlara saygili, zarif ve dogal mi?
+- 55+ izleyici sinyali dikkate aliniyor ama kitle sadece 55+ gibi daraltilmiyor mu?
+- Ceviri kokan kelimeler var mi?
+- Baslik ve metin ayni vaadi mi veriyor?
+- `billig`, `älter` veya `falsch` gibi kelimeler utandirici degil, stil baglaminda mi kullaniliyor?
+- `Hemden` kelimesi her baglamda dogru degildir; cogu kadin moda baglaminda `Blusen`, `Hemdblusen` veya `Leinenblusen` daha uygundur.
 
 Kacinilmasi gereken ceviri ve AI hatalari:
 
-- `Hemden` kelimesi her baglamda dogru degildir; cogu kadin moda baglaminda `Blusen`, `Hemdblusen` veya `Leinenblusen` daha uygundur.
 - `Satanbluse` yerine `Satinbluse`.
 - `Saturack` yerine `Satinrock`.
 - `Maxick` yerine `Maxirock`.
@@ -378,17 +404,17 @@ Kacinilmasi gereken ceviri ve AI hatalari:
 - `Teilie` yerine `Taille`.
 - `Passformzelt` yerine `Passform zählt`.
 
-German Fashion QA Pass su kontrolleri yapmalidir:
+### 26.4 Count Consistency Check
 
-- Moda terimleri Almanya'da dogal mi?
-- 55+ kadin kitleye uygun ve saygili mi?
-- Ceviri kokan kelimeler var mi?
-- Baslik ve metin ayni vaadi mi veriyor?
-- "Billig", "älter" veya "falsch" gibi kelimeler utandirici degil, stil baglaminda mi kullaniliyor?
+Baslik, intro, madde sayisi ve outro tutarli olmalidir.
 
-## Count Consistency Check
+Baslikta 5 parca deniyorsa:
 
-Baslikta 4 parca deniyorsa intro, body ve outro da 4 parca demeli ve video gercekten 4 madde icermelidir.
+- Intro 5 parca vaadi vermeli.
+- Body gercekten 5 madde icermeli.
+- Recap 5 maddeyi hatirlatmali.
+- Outro ayni sayiyi kullanmali.
+- Thumbnail veya description icindeki sayi farkli olmamali.
 
 Asla su tutarsizliga izin verilmemelidir:
 
@@ -397,39 +423,13 @@ Asla su tutarsizliga izin verilmemelidir:
 - `body = 4`
 - `outro = 7`
 
-Kontrol edilmesi gereken alanlar:
-
-- Basliktaki sayi
-- Intro'daki vaat sayisi
-- Body item sayisi
-- Recap sayisi
-- Outro'daki tekrar sayisi
-- Thumbnail veya description icindeki sayi
-
 Sayi tutarsizligi varsa metin final kalite kontrolunden gecmemelidir.
 
-## Subscriber Conversion Kurallari
+### 26.5 Comment Trigger Engine
 
-Abone cagrisi sadece sona birakilmayacak.
+Yorum almak icin dil hatasi kullanilmayacak. Hata ile yorum alinmayacak.
 
-Yapi:
-
-- `0:00-0:30`: Sadece hook, problem ve vaat.
-- Ilk faydali maddeden sonra: Yumusak kanal vaadi ve abone sebebi.
-- Orta bolum: Yorum tetikleyici veya sonraki video beklentisi.
-- Final: Yorum sorusu, kanal vaadi ve abone cagrisi.
-
-Abone cagrisi su soruya cevap vermelidir:
-
-"Bu kanala abone olursam bundan sonra hangi konuda surekli fayda alacagim?"
-
-Almanca kanal icin cevap net olmalidir: Daha elegant, gepflegt ve hochwertig gorunmek icin kolay uygulanabilir moda kurallari.
-
-## Comment Trigger Kurallari
-
-Yorum almak icin dil hatasi kullanilmayacak.
-
-Bunun yerine bilincli moda tartismasi acan sorular kullanilacak:
+Yorum icin bilincli moda tartismasi kullanilacak:
 
 - Findest du weiße Hosen elegant oder zu riskant?
 - Würdest du dieses Piece im Sommer tragen?
@@ -444,3 +444,87 @@ Comment trigger sorulari:
 - Izleyiciyi duzeltme yapmaya degil, fikir belirtmeye davet etmeli.
 - Moda zevki, risk algisi, renk tercihi veya stil kurali uzerinden tartisma acmali.
 - Kanalin sonraki video fikirlerine sinyal uretmelidir.
+- Orta bolumde bir yorum tetikleyici bulunmalidir.
+- Finalde spesifik yorum sorusu bulunmalidir.
+
+### 26.6 Subscriber Conversion Engine
+
+Subscriber CTA sadece sona birakilmayacak.
+
+Yapi:
+
+- `0:00-0:30`: Sadece hook, problem ve vaat. Ilk 20-30 saniyede abone istenmeyecek.
+- Ilk faydali maddeden sonra: Yumusak kanal vaadi ve abone sebebi.
+- Orta bolum: Yorum tetikleyici veya sonraki video beklentisi.
+- Final: Spesifik yorum sorusu, kanal vaadi ve abonelik cagrisi.
+
+Abone cagrisi su soruya cevap vermelidir:
+
+`Bu kanala abone olursam bundan sonra hangi konuda surekli fayda alacagim?`
+
+Almanca kanal icin cevap net olmalidir: Daha elegant, gepflegt, hochwertig ve stilvoll gorunmek icin kolay uygulanabilir moda kurallari.
+
+### 26.7 Trust Check
+
+Trust Check su kurallari zorunlu olarak denetlemelidir:
+
+- Basliktaki vaat video icinde gercekten karsilaniyor mu?
+- Kitleye saygili, yargilamayan ve yardim eden ton korunuyor mu?
+- "Daha pahali gorunmek" para harcama baskisina degil, styling kararlarina baglaniyor mu?
+- Genel moda havasi yerine uygulanabilir kombin kararlari veriliyor mu?
+- Moda dili dogal Almanca mi?
+- Yaniltici, abartili veya guven kiran iddia var mi?
+- Voiceover-gorsel eslesmesi birebir kontrol edildi mi?
+
+### 26.8 Mid-Video Retention Boost
+
+Orta bolumde retention dususunu azaltmak icin video monoton liste gibi akmamalidir.
+
+Mid-video boost secenekleri:
+
+- Kisa bir karsilastirma: `Das wirkt schnell casual, aber so sieht es sofort gepflegter aus.`
+- Bilincli yorum tetikleyici: `Welche Variante würdest du tragen?`
+- Sonraki maddeye merak acigi: `Der nächste Punkt ist besonders wichtig, weil er ein Outfit sofort hochwertiger wirken lässt.`
+- Yanlis/dogru styling ayrimi.
+- Gorselde hafif zoom, pan veya comparison reveal gibi zarif motion.
+
+### 26.9 New German Test Video Direction
+
+Yeni test video yonu:
+
+- Baslik: `5 Sommerteile, die dich sofort eleganter und hochwertiger wirken lassen`
+- Thumbnail:
+  - `SO WIRKST DU`
+  - `SOFORT`
+  - `ELEGANTER`
+
+Madde onerisi:
+
+1. Leichte Blusen und Hemdblusen
+2. Weiße Hosen mit guter Passform
+3. Fließende Midiröcke oder Maxiröcke
+4. Hochwertige Tops aus Satin, Viskose oder Seide
+5. Strukturierte Westen oder leichte Sommerblazer
+
+Bu testte "Hemden" ana kelime olarak kullanilmamali; kadin moda baglaminda `Blusen`, `Hemdblusen` ve `Leinenblusen` daha guvenli tercih edilmelidir.
+
+### 26.10 German Channel Priority
+
+Almanca kanal icin oncelik sirasi:
+
+1. German Fashion QA Pass
+2. Count Consistency Check
+3. Comment Trigger Engine
+4. Subscriber Conversion Engine
+5. Trust Check
+6. Mid-Video Retention Boost
+7. Voiceover-Gorsel Eslesme Kontrolu
+
+Voiceover-gorsel eslesme kurali:
+
+- Gorsel, voiceover'in soyledigi kiyafetle birebir eslesmeli.
+- Genel moda havasi yeterli kabul edilmemeli.
+- `Bluse`, `Hemdbluse`, `Leinenbluse`, `Hose`, `Rock`, `Weste`, `Blazer`, `Satin-Top` gibi parcalar net gorunmeli.
+- Voiceover `weiße Hose` diyorsa etek veya sort kabul edilmemeli.
+- Voiceover `schwarze Hose` diyorsa siyah etek kabul edilmemeli.
+- Voiceover `gelbe Bluse` veya `butter yellow Hemdbluse` diyorsa mavi/beyaz gomlek kabul edilmemeli.
