@@ -1,6 +1,7 @@
 import type { SceneAssetRequirement } from "./asset-requirements-builder.js";
 
 export type AssetManifestEntry = {
+  globalSceneIndex: number;
   chapter: string;
   itemIndex: number | null;
   itemTitle: string | null;
@@ -10,6 +11,7 @@ export type AssetManifestEntry = {
   purpose: string;
   searchKeywords: string[];
   suggestedAssetFolder: string;
+  manualFilename: string;
   status: "missing" | "selected" | "rejected";
   localPath: string | null;
   sourceUrl: string | null;
@@ -19,6 +21,7 @@ export type AssetManifestEntry = {
 export function buildAssetManifest(requirements: SceneAssetRequirement[]): AssetManifestEntry[] {
   return requirements.flatMap((requirement) => {
     return requirement.slots.map((slot) => ({
+      globalSceneIndex: requirement.globalSceneIndex,
       chapter: requirement.chapter,
       itemIndex: requirement.itemIndex,
       itemTitle: requirement.itemTitle,
@@ -28,6 +31,7 @@ export function buildAssetManifest(requirements: SceneAssetRequirement[]): Asset
       purpose: slot.purpose,
       searchKeywords: slot.searchKeywords,
       suggestedAssetFolder: slot.suggestedAssetFolder,
+      manualFilename: `assets/scene-${requirement.globalSceneIndex}-${slot.slot}.jpg`,
       status: "missing" as const,
       localPath: null,
       sourceUrl: null,

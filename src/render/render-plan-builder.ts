@@ -9,6 +9,7 @@ export type RenderPlanAsset = {
 };
 
 export type SceneRenderPlan = {
+  globalSceneIndex: number;
   chapter: string;
   itemIndex: number | null;
   itemTitle: string | null;
@@ -81,6 +82,7 @@ function buildSceneRenderPlan(item: VisualTimelineItem, manifest: AssetManifestE
   const requiredAssetCount = assets.length;
 
   return {
+    globalSceneIndex: item.globalSceneIndex,
     chapter: item.chapter,
     itemIndex: item.itemIndex,
     itemTitle: item.itemTitle,
@@ -99,11 +101,7 @@ function buildSceneRenderPlan(item: VisualTimelineItem, manifest: AssetManifestE
 
 function findSceneAssets(item: VisualTimelineItem, manifest: AssetManifestEntry[]): RenderPlanAsset[] {
   return manifest
-    .filter((entry) => {
-      return entry.chapter === item.chapter
-        && entry.itemIndex === item.itemIndex
-        && entry.sceneIndex === item.sceneIndex;
-    })
+    .filter((entry) => entry.globalSceneIndex === item.globalSceneIndex)
     .map((entry) => ({
       slot: entry.slot,
       status: entry.status,

@@ -4,6 +4,7 @@ import type { SceneSegment } from "../segmentation/segmenter.js";
 export interface VisualTimelineItem {
   startTime: string;
   endTime: string;
+  globalSceneIndex: number;
   chapter: string;
   itemIndex: number | null;
   itemTitle: string | null;
@@ -19,7 +20,7 @@ export interface VisualTimelineItem {
 export function buildVisualTimeline(segments: SceneSegment[]): VisualTimelineItem[] {
   let previousEntry: FashionKeywordEntry | undefined;
 
-  return segments.map((segment) => {
+  return segments.map((segment, index) => {
     const visual = createFashionVisualIntent(segment.spokenText, segment.section, segment.id, previousEntry);
     previousEntry = visual.entry ?? previousEntry;
     const layoutType = chooseVisualLayout({
@@ -33,6 +34,7 @@ export function buildVisualTimeline(segments: SceneSegment[]): VisualTimelineIte
     return {
       startTime: secondsToClock(segment.startSeconds),
       endTime: secondsToClock(segment.endSeconds),
+      globalSceneIndex: index + 1,
       chapter: segment.chapter,
       itemIndex: segment.itemIndex,
       itemTitle: segment.itemTitle,

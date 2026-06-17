@@ -92,7 +92,8 @@ export function exportQualityReport(
     `- Total manifest slots: ${assetManifest.length}`,
     `- Missing slots: ${countManifestStatus(assetManifest, "missing")}`,
     `- Selected slots: ${countManifestStatus(assetManifest, "selected")}`,
-    `- Rejected slots: ${countManifestStatus(assetManifest, "rejected")}`
+    `- Rejected slots: ${countManifestStatus(assetManifest, "rejected")}`,
+    "- Manual asset filenames use global scene order to avoid duplicate sceneIndex collisions."
   );
 
   lines.push(

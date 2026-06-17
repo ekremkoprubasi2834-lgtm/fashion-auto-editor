@@ -131,16 +131,19 @@ function appendScene(
   assetRequirement: SceneAssetRequirement,
   assetManifest: AssetManifestEntry[]
 ): void {
-  const selectedAssetCount = countSelectedAssets(assetManifest, segment);
+  const globalSceneIndex = assetRequirement.globalSceneIndex;
+  const selectedAssetCount = countSelectedAssets(assetManifest, globalSceneIndex);
+  const assetFiles = assetRequirement.slots.map((slot) => `assets/scene-${globalSceneIndex}-${slot.slot}.jpg`);
 
   lines.push(
-    `### Scene ${segment.sceneIndex}`,
+    `### Scene ${globalSceneIndex} (${item.chapter}${segment.sceneIndex !== globalSceneIndex ? `, local #${segment.sceneIndex}` : ""})`,
     "",
     `- Time: ${formatDurationRange(segment.startSeconds, segment.endSeconds)}`,
     `- Spoken text: ${segment.spokenText}`,
     `- Layout: ${item.layoutType}`,
     `- Required assets: ${assetRequirement.requiredAssetCount}`,
     `- Slots: ${assetRequirement.slots.map((slot) => slot.slot).join(", ")}`,
+    `- Asset files: ${assetFiles.join(", ")}`,
     `- Asset status: ${selectedAssetCount}/${assetRequirement.requiredAssetCount} selected`,
     `- Visual intent: ${item.visualIntent}`,
     `- Suggested asset folder: ${item.suggestedAssetFolder}`,
@@ -149,11 +152,9 @@ function appendScene(
   );
 }
 
-function countSelectedAssets(assetManifest: AssetManifestEntry[], segment: SceneSegment): number {
+function countSelectedAssets(assetManifest: AssetManifestEntry[], globalSceneIndex: number): number {
   return assetManifest.filter((entry) => {
-    return entry.chapter === segment.chapter
-      && entry.itemIndex === segment.itemIndex
-      && entry.sceneIndex === segment.sceneIndex
+    return entry.globalSceneIndex === globalSceneIndex
       && entry.status === "selected";
   }).length;
 }

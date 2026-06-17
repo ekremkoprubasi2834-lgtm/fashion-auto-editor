@@ -9,6 +9,7 @@ export type AssetSlot = {
 };
 
 export type SceneAssetRequirement = {
+  globalSceneIndex: number;
   chapter: string;
   itemIndex: number | null;
   itemTitle: string | null;
@@ -83,6 +84,7 @@ export function buildAssetRequirements(timelineItems: VisualTimelineItem[]): Sce
     const definitions = SLOT_DEFINITIONS[item.layoutType];
 
     return {
+      globalSceneIndex: item.globalSceneIndex,
       chapter: item.chapter,
       itemIndex: item.itemIndex,
       itemTitle: item.itemTitle,

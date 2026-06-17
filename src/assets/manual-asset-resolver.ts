@@ -32,7 +32,7 @@ export function resolveManualAssets(manifest: AssetManifestEntry[], assetsDir: s
 
 function findManualAssetPath(entry: AssetManifestEntry, assetsDir: string): string | null {
   for (const extension of SUPPORTED_EXTENSIONS) {
-    const candidate = path.join(assetsDir, `scene-${entry.sceneIndex}-${entry.slot}${extension}`);
+    const candidate = path.join(assetsDir, `scene-${entry.globalSceneIndex}-${entry.slot}${extension}`);
 
     if (fs.existsSync(candidate)) {
       return candidate;
