@@ -4,6 +4,7 @@ import { runGermanFashionQa, type QualityWarning } from "../quality/german-fashi
 import { runSubscriberConversionQa, type SubscriberQaWarning } from "../quality/subscriber-conversion-qa.js";
 import type { FfmpegPreflightResult } from "../render/ffmpeg-preflight.js";
 import type { VideoRenderPlan } from "../render/render-plan-builder.js";
+import type { RoughCutRenderResult } from "../render/rough-cut-renderer.js";
 import type { ScenePreviewRenderResult } from "../render/scene-preview-renderer.js";
 import type { SegmentationResult } from "../segmentation/segmenter.js";
 import type { VisualTimelineItem } from "../timeline/timeline-builder.js";
@@ -17,7 +18,8 @@ export function exportQualityReport(
   assetManifest: AssetManifestEntry[],
   renderPlan: VideoRenderPlan,
   renderPreflight: FfmpegPreflightResult,
-  scenePreview: ScenePreviewRenderResult
+  scenePreview: ScenePreviewRenderResult,
+  roughCutPreview: RoughCutRenderResult
 ): string {
   const chapterCount = segmentation.chapters.length;
   const itemCount = countItems(segmentation);
@@ -116,6 +118,18 @@ export function exportQualityReport(
     `- Scene index: ${scenePreview.sceneIndex ?? "None"}`,
     `- Output path: ${scenePreview.outputPath ?? "None"}`,
     `- Reason: ${scenePreview.reason ?? "None"}`
+  );
+
+  lines.push(
+    "",
+    "## Rough Cut Preview Summary",
+    "",
+    `- Rendered: ${roughCutPreview.rendered ? "Yes" : "No"}`,
+    `- Output: ${roughCutPreview.outputPath ?? "None"}`,
+    `- Total scenes: ${roughCutPreview.totalScenes}`,
+    `- Placeholder scenes: ${roughCutPreview.placeholderScenes}`,
+    `- Real asset scenes: ${roughCutPreview.realAssetScenes}`,
+    `- Reason: ${roughCutPreview.reason ?? "None"}`
   );
 
   lines.push(

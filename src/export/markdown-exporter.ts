@@ -3,6 +3,7 @@ import type { SceneAssetRequirement } from "../assets/asset-requirements-builder
 import type { FfmpegPreflightResult } from "../render/ffmpeg-preflight.js";
 import type { SceneSegment } from "../segmentation/segmenter.js";
 import type { VideoRenderPlan } from "../render/render-plan-builder.js";
+import type { RoughCutRenderResult } from "../render/rough-cut-renderer.js";
 import type { VisualTimelineItem } from "../timeline/timeline-builder.js";
 import { formatDurationRange } from "../utils/time.js";
 
@@ -13,6 +14,7 @@ export function exportEditingGuide(
   assetManifest: AssetManifestEntry[],
   renderPlan: VideoRenderPlan,
   renderPreflight: FfmpegPreflightResult,
+  roughCutPreview: RoughCutRenderResult,
   qualityWarnings: string[] = []
 ): string {
   const lines: string[] = [
@@ -27,8 +29,11 @@ export function exportEditingGuide(
     "- Render plan: output/render_plan.json",
     "- Render preflight: output/render_preflight.md",
     "- Scene preview status: output/scene_preview_status.md",
+    "- Rough cut preview: output/rough_cut_preview.mp4",
+    "- Rough cut status: output/rough_cut_status.md",
     `- Ready to render: ${renderPlan.summary.readyToRender ? "Yes" : "No"}`,
     `- FFmpeg installed: ${renderPreflight.ffmpegInstalled ? "Yes" : "No"}`,
+    `- Rough cut rendered: ${roughCutPreview.rendered ? "Yes" : "No"}`,
     "",
     "## Quality Warnings",
     ""
