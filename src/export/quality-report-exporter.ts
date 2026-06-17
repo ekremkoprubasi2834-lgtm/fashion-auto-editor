@@ -1,4 +1,5 @@
 import { runGermanFashionQa, type QualityWarning } from "../quality/german-fashion-qa.js";
+import { runSubscriberConversionQa, type SubscriberQaWarning } from "../quality/subscriber-conversion-qa.js";
 import type { SegmentationResult } from "../segmentation/segmenter.js";
 import type { TranscriptResult } from "../transcription/transcriber.js";
 
@@ -7,6 +8,7 @@ export function exportQualityReport(transcript: TranscriptResult, segmentation: 
   const itemCount = countItems(segmentation);
   const sceneCount = segmentation.scenes.length;
   const germanWarnings = runGermanFashionQa(transcript.text);
+  const subscriberWarnings = runSubscriberConversionQa(transcript.text);
   const lines: string[] = [
     "# Quality Report",
     "",
@@ -63,6 +65,18 @@ export function exportQualityReport(transcript: TranscriptResult, segmentation: 
 
   lines.push(
     "",
+    "## Subscriber Conversion Warnings",
+    ""
+  );
+
+  if (subscriberWarnings.length === 0) {
+    lines.push("- No subscriber conversion warnings detected.");
+  } else {
+    lines.push(...subscriberWarnings.map((warning) => `- ${formatSubscriberWarning(warning)}`));
+  }
+
+  lines.push(
+    "",
     "## Trust Notes",
     "",
     "- Kişi hedef alınmamalı, styling tercihi yorumlanmalı.",
@@ -84,4 +98,12 @@ function formatGermanFashionWarning(warning: QualityWarning): string {
   }
 
   return `${warning.term}: Warning: ${warning.message}`;
+}
+
+function formatSubscriberWarning(warning: SubscriberQaWarning): string {
+  if (warning.suggestion) {
+    return `${warning.message} ${warning.suggestion}`;
+  }
+
+  return warning.message;
 }
