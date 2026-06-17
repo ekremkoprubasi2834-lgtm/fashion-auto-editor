@@ -1,6 +1,9 @@
 node_modules/
 dist/
 output/
+input/*.mp3
+input/*.wav
+input/*.m4a
 .env
 .DS_Store
 *.log
