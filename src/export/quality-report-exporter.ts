@@ -6,6 +6,7 @@ import type { FfmpegPreflightResult } from "../render/ffmpeg-preflight.js";
 import type { VideoRenderPlan } from "../render/render-plan-builder.js";
 import type { RoughCutRenderResult } from "../render/rough-cut-renderer.js";
 import type { ScenePreviewRenderResult } from "../render/scene-preview-renderer.js";
+import type { VoiceoverMixResult } from "../render/voiceover-mixer.js";
 import type { SegmentationResult } from "../segmentation/segmenter.js";
 import type { VisualTimelineItem } from "../timeline/timeline-builder.js";
 import type { TranscriptResult } from "../transcription/transcriber.js";
@@ -19,7 +20,8 @@ export function exportQualityReport(
   renderPlan: VideoRenderPlan,
   renderPreflight: FfmpegPreflightResult,
   scenePreview: ScenePreviewRenderResult,
-  roughCutPreview: RoughCutRenderResult
+  roughCutPreview: RoughCutRenderResult,
+  voiceoverMix: VoiceoverMixResult
 ): string {
   const chapterCount = segmentation.chapters.length;
   const itemCount = countItems(segmentation);
@@ -130,6 +132,16 @@ export function exportQualityReport(
     `- Placeholder scenes: ${roughCutPreview.placeholderScenes}`,
     `- Real asset scenes: ${roughCutPreview.realAssetScenes}`,
     `- Reason: ${roughCutPreview.reason ?? "None"}`
+  );
+
+  lines.push(
+    "",
+    "## Voiceover Mix Summary",
+    "",
+    `- Attempted: ${voiceoverMix.attempted ? "Yes" : "No"}`,
+    `- Rendered: ${voiceoverMix.rendered ? "Yes" : "No"}`,
+    `- Output: ${voiceoverMix.outputPath ?? "None"}`,
+    `- Reason: ${voiceoverMix.reason ?? "None"}`
   );
 
   lines.push(

@@ -31,6 +31,8 @@ export function exportEditingGuide(
     "- Scene preview status: output/scene_preview_status.md",
     "- Rough cut preview: output/rough_cut_preview.mp4",
     "- Rough cut status: output/rough_cut_status.md",
+    "- Rough cut with voiceover: output/rough_cut_with_voiceover.mp4",
+    "- Voiceover mix status: output/voiceover_mix_status.md",
     `- Ready to render: ${renderPlan.summary.readyToRender ? "Yes" : "No"}`,
     `- FFmpeg installed: ${renderPreflight.ffmpegInstalled ? "Yes" : "No"}`,
     `- Rough cut rendered: ${roughCutPreview.rendered ? "Yes" : "No"}`,
