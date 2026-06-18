@@ -17,7 +17,8 @@
     "moodboard:links": "tsx src/cli.ts moodboard:links",
     "moodboard:collect": "tsx src/cli.ts moodboard:collect",
     "moodboard:review": "tsx src/cli.ts moodboard:review",
-    "moodboard:approve": "tsx src/cli.ts moodboard:approve"
+    "moodboard:approve": "tsx src/cli.ts moodboard:approve",
+    "moodboard:score": "tsx src/cli.ts moodboard:score"
   },
   "dependencies": {
     "playwright": "^1.44.0"

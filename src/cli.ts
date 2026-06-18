@@ -21,6 +21,7 @@ import {
   runMoodboardApprove,
   runMoodboardReview
 } from "./assets/providers/fashion-moodboard-review.js";
+import { runMoodboardScore } from "./assets/providers/fashion-moodboard-score.js";
 import { loadSectionAssetPools, resolveManualAssets } from "./assets/manual-asset-resolver.js";
 import { config } from "./config.js";
 import { exportAssetManifest } from "./export/asset-manifest-exporter.js";
@@ -336,6 +337,9 @@ async function runCommand(command: string | undefined): Promise<void> {
     case "moodboard:approve":
       await runMoodboardApprove(process.argv.slice(3));
       return;
+    case "moodboard:score":
+      await runMoodboardScore(process.argv.slice(3));
+      return;
     case undefined:
     case "dev":
     case "render":
@@ -345,7 +349,7 @@ async function runCommand(command: string | undefined): Promise<void> {
       throw new Error(
         `Unknown command "${command}". Use one of: assets:queries | assets:audit | assets:prepare | ` +
           `pinterest:auth | pinterest:boards | pinterest:collect | moodboard:links | moodboard:collect | ` +
-          `moodboard:review | moodboard:approve | (default render).`
+          `moodboard:review | moodboard:approve | moodboard:score | (default render).`
       );
   }
 }
