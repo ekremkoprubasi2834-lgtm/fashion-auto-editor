@@ -1,0 +1,8 @@
+{
+  "intro": ["BOARD_ID_INTRO"],
+  "blusen": ["BOARD_ID_BLUSEN"],
+  "weisse_hosen": ["BOARD_ID_WEISSE_HOSEN"],
+  "rocke": ["BOARD_ID_ROCKE"],
+  "tops": ["BOARD_ID_TOPS"],
+  "westen": ["BOARD_ID_WESTEN"]
+}

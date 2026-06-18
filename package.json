@@ -10,7 +10,10 @@
     "start": "node dist/cli.js",
     "assets:queries": "tsx src/cli.ts assets:queries",
     "assets:audit": "tsx src/cli.ts assets:audit",
-    "assets:prepare": "tsx src/cli.ts assets:prepare"
+    "assets:prepare": "tsx src/cli.ts assets:prepare",
+    "pinterest:auth": "tsx src/cli.ts pinterest:auth",
+    "pinterest:boards": "tsx src/cli.ts pinterest:boards",
+    "pinterest:collect": "tsx src/cli.ts pinterest:collect"
   },
   "devDependencies": {
     "@types/node": "^20.14.10",

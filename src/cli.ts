@@ -8,6 +8,11 @@ import {
   runAssetPrepare,
   runAssetQueries
 } from "./assets/asset-collector.js";
+import {
+  runPinterestAuth,
+  runPinterestBoards,
+  runPinterestCollect
+} from "./assets/providers/pinterest-provider.js";
 import { loadSectionAssetPools, resolveManualAssets } from "./assets/manual-asset-resolver.js";
 import { config } from "./config.js";
 import { exportAssetManifest } from "./export/asset-manifest-exporter.js";
@@ -302,6 +307,15 @@ async function runCommand(command: string | undefined): Promise<void> {
     case "assets:prepare":
       await runAssetPrepare();
       return;
+    case "pinterest:auth":
+      await runPinterestAuth(readFlagValue("--code"));
+      return;
+    case "pinterest:boards":
+      await runPinterestBoards();
+      return;
+    case "pinterest:collect":
+      await runPinterestCollect({ download: hasFlag("--download") });
+      return;
     case undefined:
     case "dev":
     case "render":
@@ -309,9 +323,24 @@ async function runCommand(command: string | undefined): Promise<void> {
       return;
     default:
       throw new Error(
-        `Unknown command "${command}". Use one of: assets:queries | assets:audit | assets:prepare | (default render).`
+        `Unknown command "${command}". Use one of: assets:queries | assets:audit | assets:prepare | ` +
+          `pinterest:auth | pinterest:boards | pinterest:collect | (default render).`
       );
   }
+}
+
+function hasFlag(flag: string): boolean {
+  return process.argv.slice(3).includes(flag);
+}
+
+function readFlagValue(flag: string): string | undefined {
+  const args = process.argv.slice(3);
+  const index = args.indexOf(flag);
+  if (index === -1) {
+    return undefined;
+  }
+  const value = args[index + 1];
+  return value && !value.startsWith("--") ? value : undefined;
 }
 
 runCommand(process.argv[2]).catch((error: unknown) => {

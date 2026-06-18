@@ -12,6 +12,7 @@ input/*.m4a
 /assets/
 new-fashion-assets/
 Desktop/new-fashion-assets/
+config/pinterest-boards.json
 .env
 .DS_Store
 *.log
