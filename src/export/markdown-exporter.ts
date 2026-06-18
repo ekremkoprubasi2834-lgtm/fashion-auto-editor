@@ -88,7 +88,7 @@ function appendChapterScenes(
   lines.push(`# Chapter: ${chapter}`, "");
 
   for (const segment of chapterSegments) {
-    appendScene(lines, segment, timeline[segment.id - 1], assetRequirements[segment.id - 1], assetManifest);
+    appendScene(lines, segment, timeline, assetRequirements, assetManifest);
   }
 }
 
@@ -119,7 +119,7 @@ function appendMainContent(
     lines.push(`## Item ${itemIndex}: ${itemTitle}`, "");
 
     for (const segment of itemSegments) {
-      appendScene(lines, segment, timeline[segment.id - 1], assetRequirements[segment.id - 1], assetManifest);
+      appendScene(lines, segment, timeline, assetRequirements, assetManifest);
     }
   }
 }
@@ -127,24 +127,42 @@ function appendMainContent(
 function appendScene(
   lines: string[],
   segment: SceneSegment,
-  item: VisualTimelineItem,
-  assetRequirement: SceneAssetRequirement,
+  timeline: VisualTimelineItem[],
+  assetRequirements: SceneAssetRequirement[],
   assetManifest: AssetManifestEntry[]
 ): void {
-  const globalSceneIndex = assetRequirement.globalSceneIndex;
-  const selectedAssetCount = countSelectedAssets(assetManifest, globalSceneIndex);
-  const assetFiles = assetRequirement.slots.map((slot) => `assets/scene-${globalSceneIndex}-${slot.slot}.jpg`);
+  // A scene can map to several timeline sub-clips (long speech blocks are sliced
+  // into shorter visual clips). Report the scene once, aggregating its sub-clips.
+  const subClips = timeline.filter((entry) => entry.sourceSceneId === segment.id);
+  const item = subClips[0];
+
+  if (!item) {
+    throw new Error(`Missing visual timeline item for scene ${segment.id}.`);
+  }
+
+  const subClipIndexes = new Set(subClips.map((subClip) => subClip.globalSceneIndex));
+  const sceneRequirements = assetRequirements.filter((requirement) =>
+    subClipIndexes.has(requirement.globalSceneIndex)
+  );
+  const requiredAssetCount = sceneRequirements.reduce((total, requirement) => total + requirement.requiredAssetCount, 0);
+  const selectedAssetCount = subClips.reduce(
+    (total, subClip) => total + countSelectedAssets(assetManifest, subClip.globalSceneIndex),
+    0
+  );
+  const assetFiles = sceneRequirements.flatMap((requirement) =>
+    requirement.slots.map((slot) => `assets/scene-${requirement.globalSceneIndex}-${slot.slot}.jpg`)
+  );
+  const clipCountSuffix = subClips.length > 1 ? `, ${subClips.length} clips` : "";
 
   lines.push(
-    `### Scene ${globalSceneIndex} (${item.chapter}${segment.sceneIndex !== globalSceneIndex ? `, local #${segment.sceneIndex}` : ""})`,
+    `### Scene ${segment.id} (${item.chapter}, local #${segment.sceneIndex}${clipCountSuffix})`,
     "",
     `- Time: ${formatDurationRange(segment.startSeconds, segment.endSeconds)}`,
     `- Spoken text: ${segment.spokenText}`,
     `- Layout: ${item.layoutType}`,
-    `- Required assets: ${assetRequirement.requiredAssetCount}`,
-    `- Slots: ${assetRequirement.slots.map((slot) => slot.slot).join(", ")}`,
+    `- Required assets: ${requiredAssetCount}`,
     `- Asset files: ${assetFiles.join(", ")}`,
-    `- Asset status: ${selectedAssetCount}/${assetRequirement.requiredAssetCount} selected`,
+    `- Asset status: ${selectedAssetCount}/${requiredAssetCount} selected`,
     `- Visual intent: ${item.visualIntent}`,
     `- Suggested asset folder: ${item.suggestedAssetFolder}`,
     `- Search keywords: ${item.searchKeywords.join(", ")}`,

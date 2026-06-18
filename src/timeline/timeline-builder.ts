@@ -22,6 +22,7 @@ export interface VisualTimelineItem {
   startTime: string;
   endTime: string;
   globalSceneIndex: number;
+  sourceSceneId: number;
   chapter: string;
   itemIndex: number | null;
   itemTitle: string | null;
@@ -35,9 +36,24 @@ export interface VisualTimelineItem {
   searchKeywords: string[];
 }
 
+// On-screen pacing limits (real seconds, after scaling to the voiceover).
+// Preference: aim for visual clips in the 4–6s range when possible. A single
+// image must never hold longer than MAX_CLIP_SECONDS. Longer speech blocks are
+// sliced into equal contiguous sub-clips so the visual changes more often.
+// Slicing preserves the exact [start, end] span of the source scene, so total
+// video duration and voiceover sync are untouched. Each sub-clip becomes its
+// own scene downstream (fresh globalSceneIndex), which makes the section-locked
+// resolver rotate assets across the sub-clips (A -> B -> A for a two-asset
+// section, A -> B -> C for three) without ever leaving the section.
+const PREFERRED_MAX_CLIP_SECONDS = 5; // target mid-point of 4–6s
+const MAX_CLIP_SECONDS = 7; // hard cap
+
 export function buildVisualTimeline(
   segments: SceneSegment[],
-  options: { targetDurationSeconds?: number } = {}
+  options: {
+    targetDurationSeconds?: number;
+    sectionAssetCount?: (section: string) => number;
+  } = {}
 ): VisualTimelineItem[] {
   let previousEntry: FashionKeywordEntry | undefined;
   const naturalDuration = segments[segments.length - 1]?.endSeconds ?? 0;
@@ -45,34 +61,117 @@ export function buildVisualTimeline(
     ? options.targetDurationSeconds / naturalDuration
     : 1;
 
-  return segments.map((segment, index) => {
+  const items: VisualTimelineItem[] = [];
+
+  for (const segment of segments) {
     const visual = createFashionVisualIntent(segment.spokenText, segment.section, segment.id, previousEntry);
     previousEntry = visual.entry ?? previousEntry;
-    const layoutType = chooseVisualLayout({
+    const chosenLayout = chooseVisualLayout({
       chapter: segment.chapter,
       itemTitle: segment.itemTitle,
       spokenText: segment.spokenText,
       visualIntent: visual.intent,
       searchKeywords: visual.keywords
     });
+    const availableAssets = options.sectionAssetCount?.(segment.section) ?? Number.POSITIVE_INFINITY;
+    const layoutType = downgradeLayoutForAssets(chosenLayout, availableAssets);
 
-    return {
-      startTime: secondsToClock(segment.startSeconds * scale),
-      endTime: secondsToClock(segment.endSeconds * scale),
-      globalSceneIndex: index + 1,
-      chapter: segment.chapter,
-      itemIndex: segment.itemIndex,
-      itemTitle: segment.itemTitle,
-      sceneIndex: segment.sceneIndex,
-      section: segment.section,
-      spokenText: segment.spokenText,
-      layoutType,
-      motion: chooseMotionPlan(layoutType, index),
-      visualIntent: visual.intent,
-      suggestedAssetFolder: visual.folder,
-      searchKeywords: visual.keywords
-    };
-  });
+    const slices = sliceSceneDuration(segment.startSeconds * scale, segment.endSeconds * scale);
+
+    for (const slice of slices) {
+      items.push({
+        startTime: secondsToClock(slice.start),
+        endTime: secondsToClock(slice.end),
+        globalSceneIndex: items.length + 1,
+        sourceSceneId: segment.id,
+        chapter: segment.chapter,
+        itemIndex: segment.itemIndex,
+        itemTitle: segment.itemTitle,
+        sceneIndex: segment.sceneIndex,
+        section: segment.section,
+        spokenText: segment.spokenText,
+        layoutType,
+        motion: chooseMotionPlan(layoutType, items.length),
+        visualIntent: visual.intent,
+        suggestedAssetFolder: visual.folder,
+        searchKeywords: visual.keywords
+      });
+    }
+  }
+
+  return items;
+}
+
+// Divide [start, end] into the fewest equal contiguous parts so that no part
+// exceeds the preferred clip length. The last part absorbs any rounding so the
+// slices always sum back to the exact original span.
+function sliceSceneDuration(start: number, end: number): { start: number; end: number }[] {
+  const duration = end - start;
+
+  if (duration <= MAX_CLIP_SECONDS) {
+    return [{ start, end }];
+  }
+
+  // Try to pick a slice count that yields per-slice durations in the 4–6s
+  // range when possible. Compute bounds for counts that satisfy the target
+  // range, then prefer a count that produces slices near the preferred value.
+  const minCountForMax = Math.max(2, Math.ceil(duration / 6)); // ensures slice <= 6
+  const maxCountForMin = Math.ceil(duration / 4); // ensures slice >= 4
+
+  let count: number;
+
+  if (minCountForMax <= maxCountForMin) {
+    const desired = Math.max(2, Math.round(duration / PREFERRED_MAX_CLIP_SECONDS));
+    count = Math.min(maxCountForMin, Math.max(minCountForMax, desired));
+  } else {
+    // No integer count yields a slice fully inside 4–6s; fall back to splitting
+    // by the preferred max to keep slices reasonably sized (and under hard cap).
+    count = Math.max(2, Math.ceil(duration / PREFERRED_MAX_CLIP_SECONDS));
+  }
+
+  // Ensure we never produce slices longer than the hard cap. If the chosen
+  // count would still create a slice > MAX_CLIP_SECONDS, increase count.
+  while (duration / count > MAX_CLIP_SECONDS) {
+    count += 1;
+  }
+
+  const step = duration / count;
+  const slices: { start: number; end: number }[] = [];
+
+  for (let index = 0; index < count; index += 1) {
+    slices.push({
+      start: start + step * index,
+      end: index === count - 1 ? end : start + step * (index + 1)
+    });
+  }
+
+  return slices;
+}
+
+// A multi-panel layout must never request more distinct assets than the
+// section actually owns, otherwise the resolver would be forced to repeat an
+// image in adjacent panels. When a section is too small we step down to a
+// simpler layout rather than borrow from another section.
+const LAYOUT_DISTINCT_ASSETS: Record<VisualLayoutType, number> = {
+  single_focus: 1,
+  sequence_single: 1,
+  detail_focus: 1,
+  moodboard_2: 2,
+  comparison_2: 2,
+  moodboard_3: 3,
+  recap_grid: 4
+};
+
+function downgradeLayoutForAssets(layoutType: VisualLayoutType, availableAssets: number): VisualLayoutType {
+  if (availableAssets >= LAYOUT_DISTINCT_ASSETS[layoutType]) {
+    return layoutType;
+  }
+
+  if (availableAssets >= 2) {
+    return "moodboard_2";
+  }
+
+  return "sequence_single";
 }
 
 function chooseMotionPlan(layoutType: VisualLayoutType, index: number): MotionPlan {

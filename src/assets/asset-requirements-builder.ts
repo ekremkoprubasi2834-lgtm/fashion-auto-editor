@@ -14,6 +14,7 @@ export type SceneAssetRequirement = {
   itemIndex: number | null;
   itemTitle: string | null;
   sceneIndex: number;
+  section: string;
   layoutType: string;
   requiredAssetCount: number;
   slots: AssetSlot[];
@@ -111,6 +112,7 @@ export function buildAssetRequirements(timelineItems: VisualTimelineItem[]): Sce
       itemIndex: item.itemIndex,
       itemTitle: item.itemTitle,
       sceneIndex: item.sceneIndex,
+      section: item.section,
       layoutType: item.layoutType,
       requiredAssetCount: definitions.length,
       slots: definitions.map((definition) => buildSlot(definition, item))

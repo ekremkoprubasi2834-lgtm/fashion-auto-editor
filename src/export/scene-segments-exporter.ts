@@ -57,11 +57,17 @@ export function exportSceneSegments(segmentation: SegmentationResult, timeline: 
 }
 
 function enrichScene(scene: SceneSegment, timeline: VisualTimelineItem[]): ExportedScene {
-  const timelineItem = timeline[scene.id - 1];
+  // A scene may now map to several timeline sub-clips (long speech blocks are
+  // sliced into shorter visual clips). The scene span runs from the first
+  // sub-clip's start to the last sub-clip's end.
+  const subClips = timeline.filter((item) => item.sourceSceneId === scene.id);
 
-  if (!timelineItem) {
+  if (subClips.length === 0) {
     throw new Error(`Missing visual timeline item for scene ${scene.id}.`);
   }
+
+  const first = subClips[0];
+  const last = subClips[subClips.length - 1];
 
   return {
     id: scene.id,
@@ -69,12 +75,12 @@ function enrichScene(scene: SceneSegment, timeline: VisualTimelineItem[]): Expor
     itemIndex: scene.itemIndex,
     itemTitle: scene.itemTitle,
     sceneIndex: scene.sceneIndex,
-    startTime: timelineItem.startTime,
-    endTime: timelineItem.endTime,
+    startTime: first.startTime,
+    endTime: last.endTime,
     spokenText: scene.spokenText,
-    layoutType: timelineItem.layoutType,
-    visualIntent: timelineItem.visualIntent,
-    suggestedAssetFolder: timelineItem.suggestedAssetFolder,
-    searchKeywords: timelineItem.searchKeywords
+    layoutType: first.layoutType,
+    visualIntent: first.visualIntent,
+    suggestedAssetFolder: first.suggestedAssetFolder,
+    searchKeywords: first.searchKeywords
   };
 }

@@ -271,7 +271,9 @@ function buildMotionFilter(
   const frames = Math.max(1, Math.round(duration * 30));
   const progress = `on/${frames}`;
   const type = variant % 2 === 1 ? invertMotion(motion.type) : motion.type;
-  const zoomRange = motion.intensity === "medium" ? 0.05 : 0.035;
+  // Keep the zoom delta small and single-directional: 1.00 -> 1.04 (subtle) or
+  // 1.00 -> 1.06 (medium). No back-and-forth, no micro shake.
+  const zoomRange = motion.intensity === "medium" ? 0.06 : 0.04;
 
   const centerX = "iw/2-(iw/zoom/2)";
   const centerY = "ih/2-(ih/zoom/2)";
@@ -311,7 +313,18 @@ function buildMotionFilter(
       break;
   }
 
-  return `[${inputLabel}]zoompan=z='${zoom}':x='${x}':y='${y}':d=1:s=${width}x${height}:fps=30,setsar=1[${outputLabel}]`;
+  // zoompan rounds its crop origin (x/y) to whole pixels every frame. At these
+  // small zoom/pan deltas that rounding makes the image jump 0px/1px between
+  // frames, which reads as jitter/shake. Supersampling the panel before
+  // zoompan makes each output pixel map to several source pixels, so the
+  // sub-pixel motion stays smooth and monotonic. The factor is capped so the
+  // intermediate stays around ~3840px on its longest side.
+  const supersample = Math.max(2, Math.min(4, Math.floor(3840 / Math.max(width, height))));
+
+  return [
+    `[${inputLabel}]scale=${width * supersample}:${height * supersample}:flags=bicubic[${outputLabel}_ss]`,
+    `[${outputLabel}_ss]zoompan=z='${zoom}':x='${x}':y='${y}':d=1:s=${width}x${height}:fps=30,setsar=1[${outputLabel}]`
+  ].join(";");
 }
 
 function invertMotion(type: SceneRenderPlan["motion"]["type"]): SceneRenderPlan["motion"]["type"] {

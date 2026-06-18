@@ -1,7 +1,14 @@
 import path from "node:path";
 import { buildAssetManifest } from "./assets/asset-manifest-builder.js";
 import { buildAssetRequirements } from "./assets/asset-requirements-builder.js";
-import { resolveManualAssets } from "./assets/manual-asset-resolver.js";
+import {
+  describeRenderGate,
+  evaluateRenderGate,
+  runAssetAudit,
+  runAssetPrepare,
+  runAssetQueries
+} from "./assets/asset-collector.js";
+import { loadSectionAssetPools, resolveManualAssets } from "./assets/manual-asset-resolver.js";
 import { config } from "./config.js";
 import { exportAssetManifest } from "./export/asset-manifest-exporter.js";
 import { exportAssetRequirements } from "./export/asset-requirements-exporter.js";
@@ -40,8 +47,10 @@ async function main(): Promise<void> {
   const transcript = await transcriber.transcribe();
   const segmentation = segmentTranscript(transcript.text);
   const voiceoverDurationSeconds = await probeMediaDurationSeconds(config.inputVoiceoverPath);
+  const sectionAssetPools = loadSectionAssetPools("assets");
   const timeline = buildVisualTimeline(segmentation.scenes, {
-    targetDurationSeconds: voiceoverDurationSeconds ?? undefined
+    targetDurationSeconds: voiceoverDurationSeconds ?? undefined,
+    sectionAssetCount: (section) => sectionAssetPools.countFor(section)
   });
   const assetRequirements = buildAssetRequirements(timeline);
   const assetManifest = resolveManualAssets(buildAssetManifest(assetRequirements), "assets");
@@ -50,12 +59,29 @@ async function main(): Promise<void> {
 
   await ensureDir(config.outputDir);
 
-  const scenePreview = renderPreflight.ffmpegInstalled
+  // Render gate: no final video is produced until every section reaches its
+  // minimum distinct-asset count. This is what turns the project from "render
+  // whatever 12 images we have" into a real asset-gated pipeline.
+  const renderGate = evaluateRenderGate("assets");
+  const renderBlockedReason = renderGate.renderAllowed
+    ? null
+    : "INSUFFICIENT_ASSETS — render blocked (section asset minimums not met).";
+  const canRender = renderPreflight.ffmpegInstalled && renderGate.renderAllowed;
+
+  if (renderBlockedReason) {
+    console.error(renderBlockedReason);
+    for (const line of describeRenderGate(renderGate)) {
+      console.error(line);
+    }
+    console.error("Run `npm run assets:audit` / `npm run assets:prepare` to fill the pools.");
+  }
+
+  const scenePreview = canRender
     ? await renderFirstReadyScenePreview({ renderPlan, outputDir: config.outputDir })
-    : createSkippedScenePreview("FFmpeg is not installed or not available in PATH.");
-  const roughCutPreview = renderPreflight.ffmpegInstalled
+    : createSkippedScenePreview(renderBlockedReason ?? "FFmpeg is not installed or not available in PATH.");
+  const roughCutPreview = canRender
     ? await renderRoughCutPreview({ renderPlan, outputDir: config.outputDir })
-    : createSkippedRoughCutPreview(renderPlan.summary.totalScenes, "FFmpeg is not installed or not available in PATH.");
+    : createSkippedRoughCutPreview(renderPlan.summary.totalScenes, renderBlockedReason ?? "FFmpeg is not installed or not available in PATH.");
 
   const voiceoverMix = await resolveVoiceoverMix(roughCutPreview);
   const musicMix = await resolveMusicMix(voiceoverMix);
@@ -265,7 +291,30 @@ class FallbackTranscriber implements Transcriber {
   }
 }
 
-main().catch((error: unknown) => {
+async function runCommand(command: string | undefined): Promise<void> {
+  switch (command) {
+    case "assets:queries":
+      await runAssetQueries();
+      return;
+    case "assets:audit":
+      await runAssetAudit();
+      return;
+    case "assets:prepare":
+      await runAssetPrepare();
+      return;
+    case undefined:
+    case "dev":
+    case "render":
+      await main();
+      return;
+    default:
+      throw new Error(
+        `Unknown command "${command}". Use one of: assets:queries | assets:audit | assets:prepare | (default render).`
+      );
+  }
+}
+
+runCommand(process.argv[2]).catch((error: unknown) => {
   const message = error instanceof Error ? error.message : String(error);
   console.error(`Error: ${message}`);
   process.exitCode = 1;

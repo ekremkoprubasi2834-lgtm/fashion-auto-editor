@@ -6,6 +6,7 @@ export type AssetManifestEntry = {
   itemIndex: number | null;
   itemTitle: string | null;
   sceneIndex: number;
+  section: string;
   layoutType: string;
   slot: string;
   purpose: string;
@@ -26,6 +27,7 @@ export function buildAssetManifest(requirements: SceneAssetRequirement[]): Asset
       itemIndex: requirement.itemIndex,
       itemTitle: requirement.itemTitle,
       sceneIndex: requirement.sceneIndex,
+      section: requirement.section,
       layoutType: requirement.layoutType,
       slot: slot.slot,
       purpose: slot.purpose,
