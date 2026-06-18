@@ -28,6 +28,10 @@ interface ApproveArgs {
   section: SectionId | null;
 }
 
+interface MultiApproveArgs {
+  runIds: string[];
+}
+
 interface CollectDocument {
   generatedAt: string;
   runId: string;
@@ -62,6 +66,12 @@ export async function runMoodboardReview(args: string[]): Promise<void> {
 }
 
 export async function runMoodboardApprove(args: string[]): Promise<void> {
+  const runIds = readRuns(args);
+  if (runIds.length > 0) {
+    promoteScoreApprovedRuns({ runIds });
+    return;
+  }
+
   const options = parseApproveArgs(args);
   const reviewRoot = path.join(resolveLibraryRoot(), "review", options.runId);
   const manifestPath = path.join(reviewRoot, "review_manifest.json");
@@ -92,6 +102,55 @@ export async function runMoodboardApprove(args: string[]): Promise<void> {
   console.log(`Approved root: ${path.join(resolveLibraryRoot(), "approved")}`);
 }
 
+function promoteScoreApprovedRuns(options: MultiApproveArgs): void {
+  const targetRoot = resolveNewFashionAssetsRoot();
+  const seenHashes = loadExistingImportHashes(targetRoot);
+  const copiedBySection = new Map<SectionId, number>();
+  let duplicateSkipped = 0;
+
+  for (const runId of options.runIds) {
+    const manifestPath = path.join(resolveLibraryRoot(), "review", runId, "score_manifest.json");
+    if (!fs.existsSync(manifestPath)) {
+      throw new Error(`Score manifest not found at ${manifestPath}. Run moodboard:score first.`);
+    }
+
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8")) as {
+      items: Array<{
+        section: SectionId;
+        filename: string;
+        absolutePath: string | null;
+        visionScore?: { decision?: string };
+      }>;
+    };
+
+    for (const item of manifest.items) {
+      if (item.visionScore?.decision !== "approve" || !item.absolutePath || !fs.existsSync(item.absolutePath)) {
+        continue;
+      }
+
+      const hash = hashFile(item.absolutePath);
+      if (seenHashes.has(hash)) {
+        duplicateSkipped += 1;
+        continue;
+      }
+
+      const destDir = path.join(targetRoot, importFolderForSection(item.section));
+      fs.mkdirSync(destDir, { recursive: true });
+      const destPath = uniqueDestinationPath(destDir, promotedFilename(item.section, runId, item.filename));
+      fs.copyFileSync(item.absolutePath, destPath);
+      seenHashes.add(hash);
+      copiedBySection.set(item.section, (copiedBySection.get(item.section) ?? 0) + 1);
+    }
+  }
+
+  console.log("Moodboard approve promoted AI-approved score assets:");
+  for (const section of collectableMoodboardSections()) {
+    console.log(`  ${section}: ${copiedBySection.get(section) ?? 0} copied`);
+  }
+  console.log(`  duplicate skipped: ${duplicateSkipped}`);
+  console.log(`Import root: ${targetRoot}`);
+}
+
 function parseReviewArgs(args: string[]): ReviewArgs {
   const runId = resolveRunId(args);
   const section = readSection(args);
@@ -102,6 +161,14 @@ function parseApproveArgs(args: string[]): ApproveArgs {
   const runId = resolveRunId(args);
   const section = readSection(args);
   return { runId, section };
+}
+
+function readRuns(args: string[]): string[] {
+  const value = readArgValue(args, "--runs");
+  if (!value) {
+    return [];
+  }
+  return value.split(",").map((item) => item.trim()).filter(Boolean);
 }
 
 function resolveRunId(args: string[]): string {
@@ -480,6 +547,59 @@ function readJpegDimensions(buffer: Buffer): Dimensions | null {
 
 function resolveLibraryRoot(): string {
   return path.join(os.homedir(), "Desktop", "fashion-asset-library");
+}
+
+function resolveNewFashionAssetsRoot(): string {
+  return process.env.NEW_FASHION_ASSETS_DIR ?? path.join(os.homedir(), "Desktop", "new-fashion-assets");
+}
+
+function importFolderForSection(section: SectionId): string {
+  switch (section) {
+    case "weisse_hosen":
+      return "weisse-hosen";
+    default:
+      return section;
+  }
+}
+
+function promotedFilename(section: SectionId, runId: string, filename: string): string {
+  const safeRunId = runId.replace(/[^a-zA-Z0-9_-]/g, "-");
+  return `${importFolderForSection(section)}-ai-${safeRunId}-${filename}`;
+}
+
+function uniqueDestinationPath(destDir: string, filename: string): string {
+  const parsed = path.parse(filename);
+  let destPath = path.join(destDir, filename);
+  let index = 2;
+  while (fs.existsSync(destPath)) {
+    destPath = path.join(destDir, `${parsed.name}-${index}${parsed.ext}`);
+    index += 1;
+  }
+  return destPath;
+}
+
+function loadExistingImportHashes(root: string): Set<string> {
+  const hashes = new Set<string>();
+  if (!fs.existsSync(root)) {
+    return hashes;
+  }
+  for (const section of collectableMoodboardSections()) {
+    const dir = path.join(root, importFolderForSection(section));
+    if (!fs.existsSync(dir)) {
+      continue;
+    }
+    for (const filename of fs.readdirSync(dir)) {
+      const absolutePath = path.join(dir, filename);
+      if (fs.statSync(absolutePath).isFile()) {
+        hashes.add(hashFile(absolutePath));
+      }
+    }
+  }
+  return hashes;
+}
+
+function hashFile(absolutePath: string): string {
+  return crypto.createHash("sha256").update(fs.readFileSync(absolutePath)).digest("hex");
 }
 
 function escapeHtml(value: string): string {
