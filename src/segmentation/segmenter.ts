@@ -1,3 +1,5 @@
+import { splitTranscriptByManualMap } from "./manual-section-map.js";
+
 export interface SceneSegment {
   id: number;
   chapter: ChapterName;
@@ -144,6 +146,12 @@ function buildSceneSegments(blocks: TextBlock[]): SceneSegment[] {
 }
 
 function buildTextBlocks(transcript: string, sentences: string[]): TextBlock[] {
+  const manualBlocks = splitTranscriptByManualMap(transcript);
+
+  if (manualBlocks) {
+    return manualBlocks.filter((block) => block.text.trim().length > 0);
+  }
+
   const itemStarts = findItemMarkers(transcript);
 
   if (itemStarts.length === 0) {

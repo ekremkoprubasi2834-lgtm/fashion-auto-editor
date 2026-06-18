@@ -24,7 +24,7 @@ export async function renderFirstReadyScenePreview(input: {
   renderPlan: VideoRenderPlan;
   outputDir: string;
 }): Promise<ScenePreviewRenderResult> {
-  const scene = input.renderPlan.scenes.find((item) => item.readyToRender);
+  const scene = input.renderPlan.scenes.find((item) => item.readyToRender && item.type !== "title_card");
 
   if (!scene) {
     return {

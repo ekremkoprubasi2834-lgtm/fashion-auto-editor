@@ -18,6 +18,14 @@ export interface MotionPlan {
   beatCuts: number[];
 }
 
+export type SceneType = "content" | "title_card";
+
+export interface TitleCard {
+  title: string;
+  subtitle: string;
+  section: string;
+}
+
 export interface VisualTimelineItem {
   startTime: string;
   endTime: string;
@@ -34,6 +42,8 @@ export interface VisualTimelineItem {
   visualIntent: string;
   suggestedAssetFolder: string;
   searchKeywords: string[];
+  sceneType: SceneType;
+  titleCard?: TitleCard;
 }
 
 // On-screen pacing limits (real seconds, after scaling to the voiceover).
@@ -94,12 +104,56 @@ export function buildVisualTimeline(
         motion: chooseMotionPlan(layoutType, items.length),
         visualIntent: visual.intent,
         suggestedAssetFolder: visual.folder,
-        searchKeywords: visual.keywords
+        searchKeywords: visual.keywords,
+        sceneType: "content"
       });
     }
   }
 
+  boostWestenVariety(items, options.sectionAssetCount?.("item_5") ?? Number.POSITIVE_INFINITY);
+
   return items;
+}
+
+// The Westen (item_5) section tends to be built from a cluster of similarly
+// short single-image scenes, so its on-screen asset variety can lag the other
+// sections even though its pool is large. To raise distinct asset usage without
+// touching scene timing (and therefore without affecting voiceover sync), a few
+// evenly spaced single-image scenes are promoted to a two-up moodboard, which
+// the section-locked resolver then fills with two distinct Westen images in the
+// same time slot. Only item_5 is touched; the promotion never exceeds the
+// section's available asset count.
+const WESTEN_DISTINCT_TARGET = 17;
+const SINGLE_ASSET_LAYOUTS: ReadonlySet<VisualLayoutType> = new Set<VisualLayoutType>([
+  "single_focus",
+  "sequence_single",
+  "detail_focus"
+]);
+
+function boostWestenVariety(items: VisualTimelineItem[], availableAssets: number): void {
+  if (availableAssets < 2) {
+    return;
+  }
+
+  const sectionItems = items.filter((item) => item.section === "item_5" && item.sceneType === "content");
+  const currentSlots = sectionItems.reduce((total, item) => total + LAYOUT_DISTINCT_ASSETS[item.layoutType], 0);
+  const target = Math.min(WESTEN_DISTINCT_TARGET, availableAssets);
+  const needed = target - currentSlots;
+
+  if (needed <= 0) {
+    return;
+  }
+
+  const candidates = sectionItems.filter((item) => SINGLE_ASSET_LAYOUTS.has(item.layoutType));
+  const upgrades = Math.min(needed, candidates.length);
+
+  for (let index = 0; index < upgrades; index += 1) {
+    // Spread the promotions evenly across the available single-image scenes so
+    // the two-up moodboards never bunch together within the section.
+    const pick = candidates[Math.floor(((index + 0.5) * candidates.length) / upgrades)];
+    pick.layoutType = "moodboard_2";
+    pick.motion = chooseMotionPlan("moodboard_2", pick.globalSceneIndex);
+  }
 }
 
 // Divide [start, end] into the fewest equal contiguous parts so that no part

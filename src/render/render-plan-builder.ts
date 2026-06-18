@@ -1,5 +1,5 @@
 import type { AssetManifestEntry } from "../assets/asset-manifest-builder.js";
-import type { MotionPlan, VisualTimelineItem } from "../timeline/timeline-builder.js";
+import type { MotionPlan, SceneType, TitleCard, VisualTimelineItem } from "../timeline/timeline-builder.js";
 
 export type RenderPlanAsset = {
   slot: string;
@@ -10,15 +10,18 @@ export type RenderPlanAsset = {
 
 export type SceneRenderPlan = {
   globalSceneIndex: number;
+  type: SceneType;
   chapter: string;
   itemIndex: number | null;
   itemTitle: string | null;
   sceneIndex: number;
+  section: string;
   layoutType: string;
   motion: MotionPlan;
   startTime: string;
   endTime: string;
   spokenText: string;
+  titleCard: TitleCard | null;
   requiredAssetCount: number;
   selectedAssetCount: number;
   missingSlots: string[];
@@ -84,15 +87,18 @@ function buildSceneRenderPlan(item: VisualTimelineItem, manifest: AssetManifestE
 
   return {
     globalSceneIndex: item.globalSceneIndex,
+    type: item.sceneType,
     chapter: item.chapter,
     itemIndex: item.itemIndex,
     itemTitle: item.itemTitle,
     sceneIndex: item.sceneIndex,
+    section: item.section,
     layoutType: item.layoutType,
     motion: item.motion,
     startTime: item.startTime,
     endTime: item.endTime,
     spokenText: item.spokenText,
+    titleCard: item.titleCard ?? null,
     requiredAssetCount,
     selectedAssetCount,
     missingSlots,

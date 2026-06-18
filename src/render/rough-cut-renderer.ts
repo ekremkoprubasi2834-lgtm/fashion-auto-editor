@@ -104,7 +104,28 @@ export async function renderRoughCutPreview(input: {
   }
 }
 
+// Premium title-card styling. Serif title over a deep warm-charcoal card with a
+// small gold eyebrow line and a thin gold rule — large and readable at 1080p.
+const TITLE_CARD_BG = "0x16130F";
+const TITLE_CARD_KICKER_COLOR = "0xC9A24B";
+const TITLE_CARD_TITLE_COLOR = "0xF4EEE2";
+const TITLE_CARD_RULE_COLOR = "0xB89253";
+const SERIF_FONT_CANDIDATES = [
+  "/System/Library/Fonts/Supplemental/Georgia.ttf",
+  "/System/Library/Fonts/Supplemental/Times New Roman.ttf",
+  "/System/Library/Fonts/Times.ttc"
+];
+const SANS_FONT_CANDIDATES = [
+  "/System/Library/Fonts/Supplemental/Arial.ttf",
+  "/System/Library/Fonts/Helvetica.ttc",
+  "/System/Library/Fonts/Geneva.ttf"
+];
+
 function buildSceneCommand(scene: SceneRenderPlan, tmpDir: string): SceneCommand {
+  if (scene.type === "title_card" && scene.titleCard) {
+    return buildTitleCardCommand(scene, tmpDir);
+  }
+
   const outputPath = path.join(tmpDir, `scene-${scene.globalSceneIndex}.mp4`);
   const duration = Math.max(1, estimateDurationSeconds(scene));
   const layout = buildLayoutSpec(scene, duration);
@@ -145,6 +166,63 @@ function buildSceneCommand(scene: SceneRenderPlan, tmpDir: string): SceneCommand
   );
 
   return { args, outputPath };
+}
+
+function buildTitleCardCommand(scene: SceneRenderPlan, tmpDir: string): SceneCommand {
+  const card = scene.titleCard!;
+  const outputPath = path.join(tmpDir, `scene-${scene.globalSceneIndex}.mp4`);
+  const duration = Math.max(1, estimateDurationSeconds(scene));
+
+  // Text is passed via textfile so umlauts and "&" need no filtergraph escaping.
+  const kickerPath = path.join(tmpDir, `title-${scene.globalSceneIndex}-kicker.txt`);
+  const titlePath = path.join(tmpDir, `title-${scene.globalSceneIndex}-title.txt`);
+  fs.writeFileSync(kickerPath, card.title, "utf8");
+  fs.writeFileSync(titlePath, card.subtitle, "utf8");
+
+  const kickerFont = resolveFont(SANS_FONT_CANDIDATES);
+  const titleFont = resolveFont(SERIF_FONT_CANDIDATES);
+
+  const filterComplex = [
+    `[0:v]drawbox=x=(iw-260)/2:y=ih/2-70:w=260:h=2:color=${TITLE_CARD_RULE_COLOR}@1:t=fill`,
+    `drawtext=textfile=${kickerPath}:fontfile=${kickerFont}:fontcolor=${TITLE_CARD_KICKER_COLOR}:fontsize=54:x=(w-text_w)/2:y=(h/2)-150`,
+    `drawtext=textfile=${titlePath}:fontfile=${titleFont}:fontcolor=${TITLE_CARD_TITLE_COLOR}:fontsize=104:x=(w-text_w)/2:y=(h/2)-30`,
+    `format=yuv420p`,
+    `setsar=1[v]`
+  ].join(",");
+
+  const args = [
+    "-y",
+    "-f",
+    "lavfi",
+    "-t",
+    String(duration),
+    "-i",
+    `color=c=${TITLE_CARD_BG}:s=1920x1080:r=30`,
+    "-filter_complex",
+    filterComplex,
+    "-map",
+    "[v]",
+    "-t",
+    String(duration),
+    "-r",
+    "30",
+    "-an",
+    "-c:v",
+    "libx264",
+    "-preset",
+    "fast",
+    "-crf",
+    "20",
+    "-pix_fmt",
+    "yuv420p",
+    outputPath
+  ];
+
+  return { args, outputPath };
+}
+
+function resolveFont(candidates: string[]): string {
+  return candidates.find((candidate) => fs.existsSync(candidate)) ?? candidates[0];
 }
 
 function buildLayoutSpec(scene: SceneRenderPlan, duration: number): LayoutSpec | null {

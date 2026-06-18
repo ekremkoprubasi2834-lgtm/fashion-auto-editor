@@ -50,6 +50,7 @@ import { burnSubtitlesIntoPreview, type SubtitleBurnResult } from "./render/subt
 import { resolveFinalPreview, type FinalPreviewResult } from "./render/final-preview-resolver.js";
 import { segmentTranscript } from "./segmentation/segmenter.js";
 import { buildVisualTimeline } from "./timeline/timeline-builder.js";
+import { insertTitleCards } from "./timeline/title-cards.js";
 import { CachingTranscriber } from "./transcription/caching-transcriber.js";
 import { DevTranscriptTranscriber } from "./transcription/dev-transcript-transcriber.js";
 import { OpenAITranscriber } from "./transcription/openai-transcriber.js";
@@ -62,10 +63,14 @@ async function main(): Promise<void> {
   const segmentation = segmentTranscript(transcript.text);
   const voiceoverDurationSeconds = await probeMediaDurationSeconds(config.inputVoiceoverPath);
   const sectionAssetPools = loadSectionAssetPools("assets");
-  const timeline = buildVisualTimeline(segmentation.scenes, {
+  const contentTimeline = buildVisualTimeline(segmentation.scenes, {
     targetDurationSeconds: voiceoverDurationSeconds ?? undefined,
     sectionAssetCount: (section) => sectionAssetPools.countFor(section)
   });
+  // Title cards are folded into the timeline before any asset work so they
+  // share one consistent globalSceneIndex numbering and carve their duration
+  // from the section's first clip (total length, and voiceover sync, unchanged).
+  const timeline = insertTitleCards(contentTimeline);
   const assetRequirements = buildAssetRequirements(timeline);
   const assetManifest = resolveManualAssets(buildAssetManifest(assetRequirements), "assets");
   const renderPlan = buildRenderPlan({ timelineItems: timeline, manifest: assetManifest });

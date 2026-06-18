@@ -103,7 +103,11 @@ const SLOT_DEFINITIONS: Record<VisualLayoutType, SlotDefinition[]> = {
 };
 
 export function buildAssetRequirements(timelineItems: VisualTimelineItem[]): SceneAssetRequirement[] {
-  return timelineItems.map((item) => {
+  // Title cards are rendered text frames with no asset; they never consume a
+  // section pool and so are excluded from requirements/manifest entirely.
+  return timelineItems
+    .filter((item) => item.sceneType !== "title_card")
+    .map((item) => {
     const definitions = SLOT_DEFINITIONS[item.layoutType];
 
     return {
@@ -117,7 +121,7 @@ export function buildAssetRequirements(timelineItems: VisualTimelineItem[]): Sce
       requiredAssetCount: definitions.length,
       slots: definitions.map((definition) => buildSlot(definition, item))
     };
-  });
+    });
 }
 
 function buildSlot(definition: SlotDefinition, item: VisualTimelineItem): AssetSlot {
