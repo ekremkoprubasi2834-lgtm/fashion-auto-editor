@@ -13,7 +13,12 @@
     "assets:prepare": "tsx src/cli.ts assets:prepare",
     "pinterest:auth": "tsx src/cli.ts pinterest:auth",
     "pinterest:boards": "tsx src/cli.ts pinterest:boards",
-    "pinterest:collect": "tsx src/cli.ts pinterest:collect"
+    "pinterest:collect": "tsx src/cli.ts pinterest:collect",
+    "moodboard:links": "tsx src/cli.ts moodboard:links",
+    "moodboard:collect": "tsx src/cli.ts moodboard:collect"
+  },
+  "dependencies": {
+    "playwright": "^1.44.0"
   },
   "devDependencies": {
     "@types/node": "^20.14.10",

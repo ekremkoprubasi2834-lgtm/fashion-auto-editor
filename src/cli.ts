@@ -13,6 +13,10 @@ import {
   runPinterestBoards,
   runPinterestCollect
 } from "./assets/providers/pinterest-provider.js";
+import {
+  runMoodboardCollect,
+  runMoodboardLinks
+} from "./assets/providers/fashion-moodboard-collector.js";
 import { loadSectionAssetPools, resolveManualAssets } from "./assets/manual-asset-resolver.js";
 import { config } from "./config.js";
 import { exportAssetManifest } from "./export/asset-manifest-exporter.js";
@@ -316,6 +320,12 @@ async function runCommand(command: string | undefined): Promise<void> {
     case "pinterest:collect":
       await runPinterestCollect({ download: hasFlag("--download") });
       return;
+    case "moodboard:links":
+      await runMoodboardLinks();
+      return;
+    case "moodboard:collect":
+      await runMoodboardCollect(process.argv.slice(3));
+      return;
     case undefined:
     case "dev":
     case "render":
@@ -324,7 +334,8 @@ async function runCommand(command: string | undefined): Promise<void> {
     default:
       throw new Error(
         `Unknown command "${command}". Use one of: assets:queries | assets:audit | assets:prepare | ` +
-          `pinterest:auth | pinterest:boards | pinterest:collect | (default render).`
+          `pinterest:auth | pinterest:boards | pinterest:collect | moodboard:links | moodboard:collect | ` +
+          `(default render).`
       );
   }
 }
