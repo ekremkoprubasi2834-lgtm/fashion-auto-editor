@@ -75,19 +75,15 @@ export async function runMoodboardCollect(args: string[]): Promise<void> {
 
   await writeTextFile(
     path.join(config.outputDir, "moodboard_candidates.json"),
-    JSON.stringify(
-      {
-        generatedAt: result.generatedAt,
-        runId: result.runId,
-        mode: result.download ? "download" : "dry-run",
-        stagingRoot: result.stagingRoot,
-        total: result.candidates.length,
-        candidates: result.candidates
-      },
-      null,
-      2
-    ) + "\n"
+    JSON.stringify(buildCollectDocument(result), null, 2) + "\n"
   );
+  if (result.download) {
+    fs.mkdirSync(result.stagingRoot, { recursive: true });
+    fs.writeFileSync(
+      path.join(result.stagingRoot, "moodboard_candidates.json"),
+      JSON.stringify(buildCollectDocument(result), null, 2) + "\n"
+    );
+  }
   await writeTextFile(path.join(config.outputDir, "moodboard_collect_report.md"), renderCollectReport(result));
 
   const downloaded = result.candidates.filter((candidate) => candidate.status === "downloaded").length;
@@ -97,6 +93,17 @@ export async function runMoodboardCollect(args: string[]): Promise<void> {
   console.log(`  Staging root: ${result.stagingRoot}`);
   console.log(`Wrote ${path.join(config.outputDir, "moodboard_candidates.json")}`);
   console.log(`Wrote ${path.join(config.outputDir, "moodboard_collect_report.md")}`);
+}
+
+function buildCollectDocument(result: MoodboardCollectResult): unknown {
+  return {
+    generatedAt: result.generatedAt,
+    runId: result.runId,
+    mode: result.download ? "download" : "dry-run",
+    stagingRoot: result.stagingRoot,
+    total: result.candidates.length,
+    candidates: result.candidates
+  };
 }
 
 export async function collectFashionMoodboard(options: MoodboardCollectOptions): Promise<MoodboardCollectResult> {

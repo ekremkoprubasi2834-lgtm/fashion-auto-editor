@@ -15,7 +15,9 @@
     "pinterest:boards": "tsx src/cli.ts pinterest:boards",
     "pinterest:collect": "tsx src/cli.ts pinterest:collect",
     "moodboard:links": "tsx src/cli.ts moodboard:links",
-    "moodboard:collect": "tsx src/cli.ts moodboard:collect"
+    "moodboard:collect": "tsx src/cli.ts moodboard:collect",
+    "moodboard:review": "tsx src/cli.ts moodboard:review",
+    "moodboard:approve": "tsx src/cli.ts moodboard:approve"
   },
   "dependencies": {
     "playwright": "^1.44.0"

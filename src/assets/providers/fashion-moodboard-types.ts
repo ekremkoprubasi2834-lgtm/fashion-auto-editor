@@ -42,3 +42,27 @@ export interface MoodboardCollectResult {
   stagingRoot: string;
   candidates: MoodboardCandidate[];
 }
+
+export type MoodboardReviewDecision = "approve" | "review" | "reject";
+
+export interface MoodboardReviewItem extends MoodboardCandidate {
+  filename: string;
+  absolutePath: string | null;
+  width: number | null;
+  height: number | null;
+  contentHash: string | null;
+  suggestedDecision: MoodboardReviewDecision;
+  reasons: string[];
+}
+
+export interface MoodboardReviewManifest {
+  generatedAt: string;
+  runId: string;
+  stagingRoot: string;
+  reviewRoot: string;
+  total: number;
+  approve: number;
+  review: number;
+  reject: number;
+  items: MoodboardReviewItem[];
+}
