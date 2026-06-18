@@ -79,7 +79,7 @@ async function main(): Promise<void> {
   const renderGate = evaluateRenderGate("assets");
   const renderBlockedReason = renderGate.renderAllowed
     ? null
-    : "INSUFFICIENT_ASSETS — render blocked (section asset minimums not met).";
+    : renderGate.blockingReason ?? "INSUFFICIENT_ASSETS — render blocked (section asset minimums not met).";
   const canRender = renderPreflight.ffmpegInstalled && renderGate.renderAllowed;
 
   if (renderBlockedReason) {

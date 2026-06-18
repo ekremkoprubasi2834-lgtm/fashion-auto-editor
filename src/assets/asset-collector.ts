@@ -33,6 +33,13 @@ import {
   buildSearchQueriesDocument,
   generateSectionQueries
 } from "./search-query-generator.js";
+import {
+  isPreparedManifestSufficient,
+  loadPreparedAssetManifest,
+  PREPARED_ASSET_MANIFEST_PATH,
+  type PreparedAssetManifest,
+  type PreparedAssetManifestEntry
+} from "./prepared-asset-manifest.js";
 
 const SUPPORTED_ASSET_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".webp"]);
 
@@ -95,8 +102,10 @@ export async function runAssetPrepare(): Promise<void> {
     return;
   }
 
-  const prepared = preparePools(pools, "assets");
+  const { prepared, manifest } = preparePools(pools, "assets", baseDir);
+  await writePreparedManifest(manifest);
   console.log(`Prepared ${prepared} distinct assets into assets/ with section prefixes.`);
+  console.log(`Wrote ${PREPARED_ASSET_MANIFEST_PATH}`);
   console.log("Assets are ready. The render gate will now allow `npm run dev`.");
 }
 
@@ -114,15 +123,35 @@ export interface RenderGateResult {
   sections: RenderGateSection[];
   totalCount: number;
   totalMinimum: number;
+  blockingReason: string | null;
 }
 
-// Gate is evaluated against assets/ (what the renderer actually binds), counting
-// section-prefixed real assets against each section's minimum.
+// Gate is evaluated against the latest prepared manifest, not a free scan of
+// assets/. This keeps stale prefixed files out of the render pool.
 export function evaluateRenderGate(assetsDir: string): RenderGateResult {
-  const realAssets = listRealAssets(assetsDir);
+  const loaded = loadPreparedAssetManifest();
+
+  if (!loaded.ok) {
+    const sections = COLLECTABLE_SECTIONS.map<RenderGateSection>((definition) => ({
+      section: definition.id,
+      displayTitle: definition.displayTitle,
+      count: 0,
+      minimum: definition.minimum,
+      met: false
+    }));
+    return {
+      renderAllowed: false,
+      sections,
+      totalCount: 0,
+      totalMinimum: sections.reduce((sum, section) => sum + section.minimum, 0),
+      blockingReason: `${loaded.code} — ${loaded.reason}`
+    };
+  }
+
+  const manifest = loaded.manifest;
 
   const sections = COLLECTABLE_SECTIONS.map<RenderGateSection>((definition) => {
-    const count = realAssets.filter((name) => name.startsWith(definition.assetPrefix)).length;
+    const count = manifest.sections[definition.id]?.count ?? 0;
     return {
       section: definition.id,
       displayTitle: definition.displayTitle,
@@ -133,10 +162,13 @@ export function evaluateRenderGate(assetsDir: string): RenderGateResult {
   });
 
   return {
-    renderAllowed: sections.every((section) => section.met),
+    renderAllowed: isPreparedManifestSufficient(manifest),
     sections,
     totalCount: sections.reduce((sum, section) => sum + section.count, 0),
-    totalMinimum: sections.reduce((sum, section) => sum + section.minimum, 0)
+    totalMinimum: sections.reduce((sum, section) => sum + section.minimum, 0),
+    blockingReason: sections.every((section) => section.met)
+      ? null
+      : "PREPARED_ASSET_MANIFEST_INSUFFICIENT — prepared asset manifest does not meet section minimums."
   };
 }
 
@@ -191,10 +223,20 @@ function printAuditSummary(report: AuditReport): void {
 
 // Copies one representative per distinct (exact + near) cluster into assets/.
 // Only reached when the audit already declared the pools sufficient.
-function preparePools(pools: SectionAssetPool[], assetsDir: string): number {
+function preparePools(
+  pools: SectionAssetPool[],
+  assetsDir: string,
+  sourceBaseDir: string
+): { prepared: number; manifest: PreparedAssetManifest } {
   fs.mkdirSync(assetsDir, { recursive: true });
   const existingHashes = new Set<string>();
   let prepared = 0;
+  const sections = Object.fromEntries(
+    COLLECTABLE_SECTIONS.map((definition) => [
+      definition.id,
+      { minimum: definition.minimum, count: 0, files: [] as PreparedAssetManifestEntry[] }
+    ])
+  ) as PreparedAssetManifest["sections"];
 
   for (const pool of pools) {
     const definition = COLLECTABLE_SECTIONS.find((candidate) => candidate.id === pool.section);
@@ -220,12 +262,53 @@ function preparePools(pools: SectionAssetPool[], assetsDir: string): number {
       const extension = path.extname(candidate.filename).toLowerCase();
       const safeExtension = SUPPORTED_ASSET_EXTENSIONS.has(extension) ? extension : ".jpg";
       const destName = `${definition.namePrefix}-${String(sequence).padStart(3, "0")}${safeExtension}`;
-      fs.copyFileSync(candidate.absolutePath, path.join(assetsDir, destName));
+      const destPath = path.join(assetsDir, destName);
+      fs.copyFileSync(candidate.absolutePath, destPath);
+      sections[definition.id].files.push({
+        section: definition.id,
+        displayTitle: definition.displayTitle,
+        filename: destName,
+        path: destPath,
+        sourcePath: candidate.absolutePath,
+        contentHash: candidate.contentHash,
+        bytes: candidate.bytes
+      });
+      sections[definition.id].count = sections[definition.id].files.length;
       prepared += 1;
     }
   }
 
-  return prepared;
+  return {
+    prepared,
+    manifest: {
+      generatedAt: new Date().toISOString(),
+      assetsDir,
+      sourceBaseDir,
+      total: prepared,
+      sections
+    }
+  };
+}
+
+async function writePreparedManifest(manifest: PreparedAssetManifest): Promise<void> {
+  await writeTextFile(PREPARED_ASSET_MANIFEST_PATH, JSON.stringify(manifest, null, 2) + "\n");
+  const lines = [
+    "# Prepared Asset Manifest",
+    "",
+    `Generated: ${manifest.generatedAt}`,
+    `Assets dir: \`${manifest.assetsDir}\``,
+    `Source: \`${manifest.sourceBaseDir}\``,
+    `Total: ${manifest.total}`,
+    "",
+    "| Section | Count | Minimum |",
+    "|---|---:|---:|"
+  ];
+
+  for (const definition of COLLECTABLE_SECTIONS) {
+    lines.push(`| ${definition.displayTitle} | ${manifest.sections[definition.id].count} | ${definition.minimum} |`);
+  }
+  lines.push("");
+  await writeTextFile(path.join("output", "prepared_asset_manifest.md"), lines.join("\n"));
 }
 
 function listRealAssets(assetsDir: string): string[] {

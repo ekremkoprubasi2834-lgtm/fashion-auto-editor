@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { AssetManifestEntry } from "./asset-manifest-builder.js";
+import { loadPreparedAssetManifest } from "./prepared-asset-manifest.js";
 
 const SUPPORTED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp"];
 
@@ -46,7 +47,9 @@ export interface SectionAssetPools {
 // resolver (binding) and the timeline (layout downgrade) read from here so they
 // can never disagree about a section's available asset count.
 export function loadSectionAssetPools(assetsDir: string): SectionAssetPools {
-  const realAssets = fs.existsSync(assetsDir) ? listRealAssets(assetsDir) : [];
+  const manifest = loadPreparedAssetManifest();
+  const allowLegacyScan = process.env.ALLOW_LEGACY_ASSET_SCAN === "true";
+  const realAssets = !manifest.ok && allowLegacyScan && fs.existsSync(assetsDir) ? listRealAssets(assetsDir) : [];
   const cache = new Map<string, string[]>();
 
   const poolFor = (section: string): string[] => {
@@ -55,7 +58,11 @@ export function loadSectionAssetPools(assetsDir: string): SectionAssetPools {
       return cached;
     }
 
-    const pool = buildPool(section, realAssets, assetsDir);
+    const pool = manifest.ok
+      ? buildManifestPool(section, manifest.manifest.assetsDir)
+      : allowLegacyScan
+        ? buildPool(section, realAssets, assetsDir)
+        : [];
     cache.set(section, pool);
     return pool;
   };
@@ -64,6 +71,37 @@ export function loadSectionAssetPools(assetsDir: string): SectionAssetPools {
     poolFor,
     countFor: (section: string) => poolFor(section).length
   };
+}
+
+function buildManifestPool(section: string, assetsDir: string): string[] {
+  const manifest = loadPreparedAssetManifest();
+  if (!manifest.ok) {
+    return [];
+  }
+
+  if (section === "outro") {
+    return [
+      manifest.manifest.sections.blusen.files[0]?.path,
+      manifest.manifest.sections.weisse_hosen.files[0]?.path,
+      manifest.manifest.sections.rocke.files[0]?.path,
+      manifest.manifest.sections.tops.files[0]?.path,
+      manifest.manifest.sections.westen.files[0]?.path
+    ].filter((candidate): candidate is string => Boolean(candidate && fs.existsSync(candidate)));
+  }
+
+  if (section === "intro") {
+    return manifest.manifest.sections.intro.files.map((file) => file.path);
+  }
+
+  const sectionMap: Record<string, keyof typeof manifest.manifest.sections> = {
+    item_1: "blusen",
+    item_2: "weisse_hosen",
+    item_3: "rocke",
+    item_4: "tops",
+    item_5: "westen"
+  };
+  const manifestSection = sectionMap[section];
+  return manifestSection ? manifest.manifest.sections[manifestSection].files.map((file) => file.path) : [];
 }
 
 export function resolveManualAssets(manifest: AssetManifestEntry[], assetsDir: string): AssetManifestEntry[] {
